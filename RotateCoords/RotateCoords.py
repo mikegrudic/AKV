@@ -18,4 +18,5 @@ def RotateCoords(theta, phi, axis, angle):
 
 def RotateGridY(grid, angle):
     theta2, phi2 = RotateCoords(grid.theta, grid.phi, np.array([0,1.0,0]), -alpha)
+    gthth_s, gphph_s, gthph_s = grid.PhysToSpec(grid.gthth), grid.PhysToSpec(grid.gphph), grid.PhysToSpec(grid.gthph)
     
