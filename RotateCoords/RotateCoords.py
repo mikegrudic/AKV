@@ -18,32 +18,25 @@ def RotateCoords(theta, phi, axis, angle):
     return np.arccos(pos[2].T), np.arctan2(pos[1].T,pos[0].T)%(2*np.pi)
 
 def RotateScalarY(grid, scalar, angle):
-    coeffs = grid.PhysToSpec(scalar)
-    theta2, phi2 = RotateCoords(grid.theta, grid.phi, np.array([0,1.0,0]), -angle)
-    rot = np.zeros(grid.extents)
-    for i in xrange(grid.extents[0]):
-        for j in xrange(grid.extents[1]):
-            rot[i,j] = grid.EvalAtPoint(coeffs,theta2[i,j], phi2[i,j])
-
-    return rot
-
-#    grid.EvalAtPoint(coeffs, theta2, phi2)
+    coeffs = grid.grid.analys(scalar)
+    return grid.grid.synth(grid.grid.Yrotate(coeffs, angle))
 
 def RotateGridY(grid, angle):
     theta2, phi2 = RotateCoords(grid.theta, grid.phi, np.array([0,1.0,0]), -angle)
-    gthth_s, gphph_s, gthph_s = grid.PhysToSpec(grid.gthth), grid.PhysToSpec(grid.gphph), grid.PhysToSpec(grid.gthph)
-    ricci_s = grid.PhysToSpec(grid.ricci)
-    
-    gthth_rot = grid.EvalAtPoints(gthth_s, theta2, phi2)
-    print gthth_rot
+    zprime = np.cos(angle)*np.cos(grid.theta) - np.cos(grid.phi)*np.sin(angle)*np.sin(grid.theta)
+    denom1 = np.sqrt(1-zprime**2)
+    denom2 = 1 + (np.cos(angle)/np.tan(grid.phi) + np.sin(angle)/np.sin(grid.phi)/np.tan(grid.theta))**2
+    dth2_dth = (np.cos(grid.phi)*grid.costheta*np.sin(angle) - np.cos(alpha)*grid.sintheta)/denom1
+    dth2_dph = np.sin(angle)*np.sin(grid.phi)*grid.sintheta/denom1
+    dph2_dth = np.sin(angle)/grid.sintheta**2/np.sin(grid.phi)/denom2
+    dph2_dph = 
 
 grid = sg.SphericalGrid(15,15)
 
 coeffs =  np.zeros(grid.numTerms)
 coeffs[2] = 1.0
 #coeffs2[1] = 1.0
-np.savetxt("scalar1.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), grid.SpecToPhys(coeffs).flatten())))
-print grid.SpecToPhys(coeffs)
-np.savetxt("scalar2.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), RotateScalarY(grid, grid.SpecToPhys(coeffs), 2*np.pi).flatten())))
+for i in xrange(8):
+    np.savetxt("scalar"+str(i)+".dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), RotateScalarY(grid, grid.SpecToPhys(coeffs), i*np.pi/8).flatten())))
 #for i, theta in enumerate(grid.theta):
 #    print i, theta
