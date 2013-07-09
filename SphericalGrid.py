@@ -263,16 +263,7 @@ class SphericalGrid:
 ###################################################################
 
     def EvalAtPoint(self, coeffs, theta, phi):
-        shtns_spec = np.zeros(self.nlm, dtype=np.complex128)
-        for i in xrange(self.numTerms):
-#            l, m = YlmIndex(i)
-            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
-            if self.m[i]>=0:
-                shtns_spec.real[index] = coeffs[i]
-            else:
-                shtns_spec.imag[index] = coeffs[i]
-        return self.grid.SH_to_point(shtns_spec, np.cos(theta), phi)
-
+        return self.grid.SH_to_point(self.StandardToShtns(coeffs), np.cos(theta), phi)
 
 #### Minimize ########################################################
 # Find a local minimum of a function using spectral interpolation
