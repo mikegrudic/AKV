@@ -1,4 +1,5 @@
 import numpy as np
+import SphericalGrid
 
 def RotationMatrix(axis,theta):
     axis = axis/np.sqrt(np.dot(axis,axis))
@@ -21,4 +22,6 @@ def RotateGridY(grid, angle):
     gthth_s, gphph_s, gthph_s = grid.PhysToSpec(grid.gthth), grid.PhysToSpec(grid.gphph), grid.PhysToSpec(grid.gthph)
     ricci_s = grid.PhysToSpec(grid.ricci)
     
-    gthth_rot = grid.EvalAtPoint
+    gthth_rot = grid.EvalAtPoints(gthth_s, theta2, phi2)
+    print gthth_rot
+

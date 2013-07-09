@@ -265,6 +265,8 @@ class SphericalGrid:
     def EvalAtPoint(self, coeffs, theta, phi):
         return self.grid.SH_to_point(self.StandardToShtns(coeffs), np.cos(theta), phi)
 
+    EvalAtPoints = np.vectorize(EvalAtPoint, excluded =['self','coeffs'])
+
 #### Minimize ########################################################
 # Find a local minimum of a function using spectral interpolation
 ######################################################################
