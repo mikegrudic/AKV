@@ -98,10 +98,8 @@ class SphericalGrid:
 # NOT TO USE GENERAL FORM - eg use conformal spherical form
 ##############################################################################
     def ComputeRicci(self):
-        self.ComputeMetricDerivs()
         gthth_ph2 = self.D2(self.gthth,1)
         gphph_th2 = self.D2(self.gphph,0)
-        self.ricci = (self.gphph*(gphph_th * gthth_th + gthth_ph**2) + self.gthth*(gphph_ph*gthth_ph + gphph_th**2 - 2*self.gphph*(gphph_th2 + gthth_ph2)))/2.0/(self.detg**2)
 
 ######### SpecToPhys ##########################################################
 #   IN:
