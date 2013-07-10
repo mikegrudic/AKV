@@ -157,15 +157,15 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
     AKV2 = grid.Hodge(grid.D(second_pot))
     AKV3 = grid.Hodge(grid.D(third_pot))
         
-    np.savetxt(name+"pot1.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),first_pot.flatten())))
-    np.savetxt(name+"pot2.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),second_pot.flatten())))
-    np.savetxt(name+"pot3.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),third_pot.flatten())))
-    np.savetxt(name+"Ylm1.dat",np.column_stack((l,m,firstVec)),fmt="%d\t%d\t%g")
-    np.savetxt(name+"Ylm2.dat",np.column_stack((l,m,secondVec)),fmt="%d\t%d\t%g")
-    np.savetxt(name+"Ylm3.dat",np.column_stack((l,m,thirdVec)),fmt="%d\t%d\t%g")
-    np.savetxt(name+"vec1.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV1[0].flatten(), AKV1[1].flatten())))
-    np.savetxt(name+"vec2.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV2[0].flatten(), AKV2[1].flatten())))
-    np.savetxt(name+"vec3.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV3[0].flatten(), AKV3[1].flatten())))
+    np.savetxt(name+"_pot1.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),first_pot.flatten())))
+    np.savetxt(name+"_pot2.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),second_pot.flatten())))
+    np.savetxt(name+"_pot3.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),third_pot.flatten())))
+    np.savetxt(name+"_Ylm1.dat",np.column_stack((l,m,firstVec)),fmt="%d\t%d\t%g")
+    np.savetxt(name+"_Ylm2.dat",np.column_stack((l,m,secondVec)),fmt="%d\t%d\t%g")
+    np.savetxt(name+"_Ylm3.dat",np.column_stack((l,m,thirdVec)),fmt="%d\t%d\t%g")
+    np.savetxt(name+"_vec1.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV1[0].flatten(), AKV1[1].flatten())))
+    np.savetxt(name+"_vec2.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV2[0].flatten(), AKV2[1].flatten())))
+    np.savetxt(name+"_vec3.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV3[0].flatten(), AKV3[1].flatten())))
 
     if return_grid==True:
         return AKV1, AKV2, AKV3, grid
