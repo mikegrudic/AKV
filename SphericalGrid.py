@@ -1,6 +1,6 @@
 #!/usr/bin/env python                
 import scipy
-from scipy import special, misc, linalg, optimize
+from scipy import special, misc, linalg, optimize, weave
 import numpy as np
 import shtns
 
@@ -34,6 +34,7 @@ class SphericalGrid:
         self.numTerms = (self.Lmax+1)*(self.Lmax+1)
         self.extents = np.array([self.nTheta,self.nPhi])
         self.l, self.m = YlmIndex(np.arange(self.numTerms))
+        self.index = np.array([self.grid.idx(int(self.l[i]),int(abs(self.m[i]))) for i in xrange(self.numTerms)])
 
 #grid coordinates and properties:
         self.theta, self.phi = np.meshgrid(
@@ -55,13 +56,13 @@ class SphericalGrid:
             self.UpdateMetric()
 
         #construct normal matrix for least squares spectral analysis
-        self.A = np.zeros((self.nTheta*self.nPhi, self.numTerms))
-        for i in xrange(self.numTerms):
+#        self.A = np.zeros((self.nTheta*self.nPhi, self.numTerms))
+#        for i in xrange(self.numTerms):
 #            l, m = YlmIndex(i)
-            coeffs = np.zeros(self.numTerms)
-            coeffs[i] = 1.0
-            self.A[:,i] = self.SpecToPhys(coeffs).flatten()
-        self.ATA = linalg.cholesky(self.A.T.dot(self.A))
+#            coeffs = np.zeros(self.numTerms)
+#            coeffs[i] = 1.0
+#            self.A[:,i] = self.SpecToPhys(coeffs).flatten()
+#        self.ATA = linalg.cholesky(self.A.T.dot(self.A))
 
         # Compute ricci scalar, or not...
         if fricci==None:
@@ -209,27 +210,46 @@ class SphericalGrid:
 
 
     def StandardToShtns(self,coeffs):
-        shtns_spec = np.zeros(self.nlm, dtype=np.complex128)
-        for i in xrange(self.numTerms):
+#        shtns_spec = np.zeros(self.nlm, dtype=np.complex128)       
+#        for i in xrange(self.numTerms):
 #            l, m = YlmIndex(i)
-            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
-            if self.m[i]>=0:
-                shtns_spec.real[index] = coeffs[i]
-            else:
-                shtns_spec.imag[index] = coeffs[i]
-        return shtns_spec
+#            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
+#            if self.m[i]>=0:
+#                shtns_spec.real[index] = coeffs[i]
+#            else:
+#                shtns_spec.imag[index] = coeffs[i]
+        index, m, re, im, n = self.index, self.m, np.zeros(self.nlm), np.zeros(self.nlm), self.numTerms
+        code = """
+        int i;
+        for (i = 0; i < n; ++i){
+            if (M1(i)>=0) RE1(INDEX1(i)) = COEFFS1(i);
+            else IM1(INDEX1(i)) = COEFFS1(i);
+        }
+        """
+        weave.inline(code,['index', 'm', 're', 'im', 'n','coeffs'])
+#        return shtns_spec
+        return re + 1j*im
 
     def ShtnsToStandard(self,shtns_spec):
-        coeffs = np.zeros(self.numTerms)
-        for i in xrange(self.numTerms):
+#        coeffs = np.zeros(self.numTerms)
+#        for i in xrange(self.numTerms):
 #            l, m = YlmIndex(i)
-            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
-            if self.m[i]>=0:
-                coeffs[i] = shtns_spec[index].real
-            else:
-                coeffs[i] = shtns_spec[index].imag
+#            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
+#            if self.m[i]>=0:
+#                coeffs[i] = shtns_spec[index].real
+#            else:
+#                coeffs[i] = shtns_spec[index].imag
+#        return coeffs
+        index, m, coeffs, n, re, im = self.index, self.m, np.zeros(self.numTerms), self.numTerms, shtns_spec.real, shtns_spec.imag
+        code = """
+        int i;
+        for(i=0; i<n; ++i){
+            if (M1(i)>=0) COEFFS1(i) = RE1(INDEX1(i));
+            else COEFFS1(i) = IM1(INDEX1(i));
+            }
+        """
+        weave.inline(code,['index','m','re','im','n','coeffs'])
         return coeffs
-            
 
 ###### RaiseForm ##################################
 # Raises the index of a 1-form
@@ -289,7 +309,8 @@ class SphericalGrid:
 ######################################################################
 
     def Minimize(self, scalar):
-        coeffs = self.PhysToSpecLS(scalar)
+#        coeffs = self.PhysToSpecLS(scalar)
+        coeffs = self.PhysToSpec(scalar)
         gridMin = np.min(scalar)
         gridMinIndex = np.unravel_index(np.argmin(scalar), self.extents)
         gridMinTh, gridMinPh = self.theta[gridMinIndex], self.phi[gridMinIndex]

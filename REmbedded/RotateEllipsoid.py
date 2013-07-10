@@ -23,8 +23,8 @@ p.add_option("--Lmax", type ="int", default = 15,
 
 n = 8
 
-for i, angle in enumerate(np.linspace(0,pi,n+1)):
-    name = str(float(i)/n)+"pi"
+for i, angle in enumerate(np.linspace(0,pi/2,n+1)):
+    name = str(float(i)/(2*n))+"pi"
     print name
     grid = Ellipsoid(opts.Lmax,opts.Lmax,1.1,1, angle)
     AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm, name=name)
