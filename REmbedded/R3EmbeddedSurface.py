@@ -28,3 +28,7 @@ def InitR3EmbeddedSurface(grid, R):
               2*grid.sintheta**2*(2*grid.sintheta**2*dR_dth**2 - d2R_dthdph**2 +
              (d2R_dph + grid.costheta*grid.sintheta*dR_dth)*
               d2R_dth)))/R/(dR_dph**2 + grid.sintheta**2*(R**2+dR_dth**2))**2
+
+def Ellipsoid(Lmax, MMax, a, b, axis):
+    R = 
+
