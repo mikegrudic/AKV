@@ -21,6 +21,7 @@ def RotateScalarY(grid, scalar, angle):
     coeffs = grid.grid.analys(scalar)
     return grid.grid.synth(grid.grid.Yrotate(coeffs, angle))
 
+'''
 def RotateGridY(grid, angle):
     theta2, phi2 = RotateCoords(grid.theta, grid.phi, np.array([0,1.0,0]), -angle)
     zprime = np.cos(angle)*np.cos(grid.theta) - np.cos(grid.phi)*np.sin(angle)*np.sin(grid.theta)
@@ -40,3 +41,4 @@ for i in xrange(8):
     np.savetxt("scalar"+str(i)+".dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), RotateScalarY(grid, grid.SpecToPhys(coeffs), i*np.pi/8).flatten())))
 #for i, theta in enumerate(grid.theta):
 #    print i, theta
+'''

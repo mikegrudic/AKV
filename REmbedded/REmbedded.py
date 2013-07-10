@@ -22,12 +22,13 @@ p.add_option("--Lmax", type ="int", default = 15,
 (opts,args) = p.parse_args()
 ########################################################################################
 
-grid = SphericalGrid.SphericalGrid(opts.Lmax, opts.Lmax)
+#grid = SphericalGrid.SphericalGrid(opts.Lmax, opts.Lmax)
 
-a, b = 0.1, 4
-R = 2*np.ones(grid.extents) + a*np.exp(-b*grid.theta**2)
+#a, b = 0.1, 4
+#R = 2*np.ones(grid.extents) + a*np.exp(-b*grid.theta**2)
 
-InitR3EmbeddedSurface(grid,R)
+#InitR3EmbeddedSurface(grid,R)
+grid = Ellipsoid(opts.Lmax,opts.Lmax,1,2,0)
 
 AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm)
 

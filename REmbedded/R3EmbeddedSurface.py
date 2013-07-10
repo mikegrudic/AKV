@@ -1,6 +1,10 @@
 import numpy as np
 import SphericalGrid
+import RotateCoords
 
+#class R3EmbeddedSurface(SphericalGrid):
+#    def __init__(self, Lmax, Mmax, fmetric=None, fricci=None):
+#        SphericalGrid.__init__(self,Lmax,Mmax)
 def R3EmbeddedSurface(Lmax, MMax, Rfunc):
     grid = SphericalGrid.SphericalGrid(Lmax,MMax)
     R = Rfunc(grid.theta, grid.phi)
@@ -29,6 +33,10 @@ def InitR3EmbeddedSurface(grid, R):
              (d2R_dph + grid.costheta*grid.sintheta*dR_dth)*
               d2R_dth)))/R/(dR_dph**2 + grid.sintheta**2*(R**2+dR_dth**2))**2
 
-#def Ellipsoid(Lmax, MMax, a, b, axis):
-#    R = 
+def Ellipsoid(Lmax, MMax, a, b, offset_angle):
+    grid = SphericalGrid.SphericalGrid(Lmax,MMax)
+    R = a*b/np.sqrt((b*grid.costheta)**2 + (a*grid.sintheta)**2)
+    R = RotateCoords.RotateScalarY(grid,R,offset_angle)
+    InitR3EmbeddedSurface(grid,R)
 
+    return grid
