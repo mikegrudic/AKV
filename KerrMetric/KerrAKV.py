@@ -20,10 +20,10 @@ p.add_option("--J", type="float", default=0.0)
 (opts,args) = p.parse_args()
 
 ########################################################################################
-#t=time.time()
+
 #create black hole object to get functions for metric, curvatures
 a = opts.J/opts.M
 blackHole = KerrMetric.KerrMetric(opts.M,a)
-
+t=time.time()
 AKV.AKV(blackHole.HorizonMetric, blackHole.HorizonRicci, Lmax=opts.Lmax, KerrNorm=opts.KerrNorm, mNorm=opts.mNorm, return_grid=True)
-#print time.time()-t
+print time.time()-t
