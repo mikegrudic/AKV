@@ -98,8 +98,27 @@ class SphericalGrid:
 # NOT TO USE GENERAL FORM - eg use conformal spherical form
 ##############################################################################
     def ComputeRicci(self):
-        gthth_ph2 = self.D2(self.gthth,1)
-        gphph_th2 = self.D2(self.gphph,0)
+        d2gthth_dph = self.D2(self.gthth,1)
+        d2gphph_dth = self.D2(self.gphph,0)
+        d2gthph_dthdph = self.D(self.D(self.gthph,0),1)
+
+        self.ricci = ((self.gthth*self.gphph_ph*self.gthth_ph)/2. - 
+        self.gthph*self.gthph_ph*self.gthth_ph + 
+        (self.gphph*self.gthth_ph**2)/2. + 
+        self.gthph**2*d2gthth_dph - 
+        self.gphph*self.gthth*d2gthth_dph - 
+        (self.gthph*self.gthth_ph*self.gphph_th)/2. + 
+        (self.gthth*self.gphph_th**2)/2. - 
+        self.gthth*self.gphph_ph*self.gthph_th + 
+        2*self.gthph*self.gthph_ph*self.gthph_th - 
+        self.gthph*self.gphph_th*self.gthph_th + 
+        (self.gthph*self.gphph_ph*self.gthth_th)/2. - 
+        self.gphph*self.gthph_ph*self.gthth_th + 
+        (self.gphph*self.gphph_th*self.gthth_th)/2. - 
+        2*self.gthph**2*d2gthph_dthdph + 
+        2*self.gphph*self.gthth*d2gthph_dthdph + 
+        self.gthph**2*d2gphph_dth - 
+        self.gphph*self.gthth*d2gphph_dth)/self.detg**2
 
 ######### SpecToPhys ##########################################################
 #   IN:
