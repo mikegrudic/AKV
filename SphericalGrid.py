@@ -76,8 +76,8 @@ class SphericalGrid:
         self.gthph_th, self.gthph_ph = self.D(self.gthph)
 
         #These terms show up when computing Laplacians
-        self.gamma_ph = -0.5*self.gphph_th*self.ginvthph*self.ginvphph - 0.5*self.gphph_ph*self.ginvphph*self.ginvphph - self.ginvphph*self.ginvthth*self.gthph_th - 0.5*self.ginvthth*self.ginvthph*self.gthth_th + 0.5*self.ginvthth*self.ginvphph*self.gthth_ph - self.ginvthph*self.ginvphph*self.gthph_ph - self.ginvthph*self.ginvthph*self.gthth_ph
-        self.gamma_th = -0.5*self.gphph_ph*self.ginvthph*self.ginvphph - self.gphph_th*self.ginvthph*self.ginvthph + 0.5*self.gphph_th*self.ginvthth*self.ginvphph - self.ginvphph*self.ginvthth*self.gthph_ph - self.ginvthth*self.ginvthph*self.gthph_th - 0.5*self.ginvthth*self.ginvthph*self.gthth_ph - 0.5*self.ginvthth*self.ginvthth*self.gthth_th
+        self.gamma_ph = (-(self.gthth**2*self.gphph_ph) + self.gthth*(self.gthph*(2*self.gthth_ph + self.gphph_th) + self.gphph*(self.gthth_ph - 2*self.gthph_th)) + self.gthph*(-2*self.gthph*self.gthth_ph + self.gphph*self.gthth_th))/2.0/self.detg**2
+        self.gamma_th = (-2*self.gthph**2*self.gphph_th + self.gthph*(self.gthth*self.gphph_ph + self.gphph*(self.gthth_ph + 2*self.gthph_th)) + self.gphph*(self.gthth*(-2*self.gthth_ph + self.gphph_th) - self.gphph*self.gthth_th))/2.0/self.detg**2
 
 #### ComputeMetric ##########################################################
 # Given a function returning metric functions computes metric functions and
@@ -132,14 +132,6 @@ class SphericalGrid:
     def SpecToPhys(self, coeffs):
         if len(coeffs) < self.numTerms:
             coeffs = np.hstack((coeffs,np.zeros(self.numTerms-len(coeffs))))
-#        shtns_spec = np.zeros(self.nlm, dtype=np.complex128)
-#        for i in xrange(self.numTerms):
-#            l, m = YlmIndex(i)
-#            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
-#            if self.m[i]>=0:
-#                shtns_spec.real[index] = coeffs[i]
-#            else:
-#                shtns_spec.imag[index] = coeffs[i]
         return self.grid.synth(self.StandardToShtns(coeffs))
 
 ######### PhysToSpec ##########################################################
@@ -151,15 +143,7 @@ class SphericalGrid:
 ##############################################################################
 
     def PhysToSpec(self, scalar):
-#        coeffs = np.zeros(self.numTerms)
         shtns_spec = self.grid.analys(scalar)
-#        for i in xrange(self.numTerms):
-#            l, m = YlmIndex(i)
-#            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
-#            if self.m[i]>=0:
-#                coeffs[i] = shtns_spec[index].real
-#            else:
-#                coeffs[i] = shtns_spec[index].imag       
         return self.ShtnsToStandard(shtns_spec)
 
 ####### PhysToSpecLS #####################################################
@@ -210,14 +194,6 @@ class SphericalGrid:
 
 
     def StandardToShtns(self,coeffs):
-#        shtns_spec = np.zeros(self.nlm, dtype=np.complex128)       
-#        for i in xrange(self.numTerms):
-#            l, m = YlmIndex(i)
-#            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
-#            if self.m[i]>=0:
-#                shtns_spec.real[index] = coeffs[i]
-#            else:
-#                shtns_spec.imag[index] = coeffs[i]
         index, m, re, im, n = self.index, self.m, np.zeros(self.nlm), np.zeros(self.nlm), self.numTerms
         code = """
         int i;
@@ -227,19 +203,9 @@ class SphericalGrid:
         }
         """
         weave.inline(code,['index', 'm', 're', 'im', 'n','coeffs'])
-#        return shtns_spec
         return re + 1j*im
 
     def ShtnsToStandard(self,shtns_spec):
-#        coeffs = np.zeros(self.numTerms)
-#        for i in xrange(self.numTerms):
-#            l, m = YlmIndex(i)
-#            index = self.grid.idx(int(self.l[i]),int(abs(self.m[i])))
-#            if self.m[i]>=0:
-#                coeffs[i] = shtns_spec[index].real
-#            else:
-#                coeffs[i] = shtns_spec[index].imag
-#        return coeffs
         index, m, coeffs, n, re, im = self.index, self.m, np.zeros(self.numTerms), self.numTerms, shtns_spec.real, shtns_spec.imag
         code = """
         int i;

@@ -18,6 +18,7 @@ else:
     vecFiles = glob.glob(opts.f)
 
 for vecFile in vecFiles:
+    print vecFile
     figure()
     name, extension = vecFile.split("vec")
 #    print f.split(".dat")[0]
@@ -25,9 +26,7 @@ for vecFile in vecFiles:
 
     vec = np.loadtxt(vecFile)
 
-    print vec.shape
     gridShape = (opts.Lmax+1,len(vec)/(opts.Lmax+1))
-    print gridShape
     theta = vec[:,0].reshape(gridShape)
     phi = vec[:,1].reshape(gridShape)
     v_theta = vec[:,2].reshape(gridShape)
