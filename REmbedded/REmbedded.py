@@ -29,10 +29,10 @@ p.add_option("--Lmax", type ="int", default = 15,
 #grid.UpdateR()
 
 #InitR3EmbeddedSurface(grid,R)
-grid = Ellipsoid(opts.Lmax,opts.Lmax,1.1,1, np.pi/2)
-
-
+grid = Ellipsoid(opts.Lmax,opts.Lmax,1.1,1)
+print grid.gthth_th
 AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm)
+print grid.gthth_th
 R = grid.R
 np.savetxt("R.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), R.flatten())))
 

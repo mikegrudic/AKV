@@ -8,19 +8,23 @@ class R3EmbeddedSurface(SphericalGrid):
         if Rfunc != None:
             self.R = Rfunc(grid.theta, grid.phi)
             self.UpdateR()
-#def R3EmbeddedSurface(Lmax, MMax, Rfunc):
-#    grid = SphericalGrid.SphericalGrid(Lmax,MMax)
-#    R = Rfunc(grid.theta, grid.phi)
-#    InitR3EmbeddedSurface(grid,R)
-#    return grid
 
     def UpdateR(self):
         dR_dth, dR_dph = self.D(self.R)
         d2R_dth, d2R_dph = self.D2(self.R)
         d2R_dthdph = self.D(dR_dth,1)
 
-        self.gthth, self.gphph, self.gthph = self.R**2 + dR_dth**2, self.R**2*self.sintheta**2 + dR_dph**2, 2*dR_dph*dR_dth
-        self.UpdateMetric()
+        self.gthth, self.gphph, self.gthph = self.R**2 + dR_dth**2, self.R**2*self.sintheta**2 + dR_dph**2, dR_dph*dR_dth
+        self.UpdateMetric() #computes derivatives redundantly... can optimize
+        
+        self.gthth_th = 2*dR_dth*(self.R + d2R_dth)
+        self.gthth_ph = 2*(self.R*dR_dph + dR_dth*d2R_dthdph)
+        self.gphph_ph = 2*dR_dph*(self.R*self.sintheta**2 + d2R_dph)
+        self.gphph_th = 2*self.R*self.sintheta*(self.costheta*self.R + self.sintheta*dR_dth) + 2*dR_dph*d2R_dthdph
+        self.gthph_th = dR_dth*d2R_dthdph + dR_dph*d2R_dth
+        self.gthph_ph = d2R_dph*dR_dth + dR_dph*d2R_dthdph
+        self.gamma_ph = (-(self.gthth**2*self.gphph_ph) + self.gthth*(self.gthph*(2*self.gthth_ph + self.gphph_th) + self.gphph*(self.gthth_ph - 2*self.gthph_th)) + self.gthph*(-2*self.gthph*self.gthth_ph + self.gphph*self.gthth_th))/2.0/self.detg**2
+        self.gamma_th = (-2*self.gthph**2*self.gphph_th + self.gthph*(self.gthth*self.gphph_ph + self.gphph*(self.gthth_ph + 2*self.gthph_th)) + self.gphph*(self.gthth*(-2*self.gthth_ph + self.gphph_th) - self.gphph*self.gthth_th))/2.0/self.detg**2
 
         self.ricci = (2*self.R**3*self.sintheta**4 - 4*self.sintheta*dR_dth*
               (2*self.costheta*dR_dph**2 +
