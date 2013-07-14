@@ -5,7 +5,7 @@ import SphericalGrid
 
 pi = np.pi
 
-def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", return_grid=False, name='AKV'):
+def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", return_grid=False, name='AKV', use_sparse_alg=False):
     """ AKV 
     Returns the 3 minimum shear approximate killing vectors of a 2-manifold with
     (theta, phi) coordinates, and the SphericalGrid containing all the pseudospectral grid information
@@ -98,12 +98,21 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
         else:
             B[i-1] = CWBf_s[1:numpoints+1]
 
-    eigensol = scipy.linalg.eig(M.T, B.T)
+    # Solve the generalized eigenvalue problem
+    if use_sparse_alg:
+#  Truncate all "small" values to 0 to make matrix sparse
+        M[np.abs(M) < 1e-12] = 0.0
+        B[np.abs(B) < 1e-12] = 0.0
+
+        invB = scipy.linalg.inv(B.T)
+        invB = scipy.sparse.csr_matrix(invB)
+        M = scipy.sparse.csr_matrix(M.T)
+        eigensol = scipy.sparse.linalg.eigs(invB*M, 3, which='SM')
+    else:
+        eigensol = scipy.linalg.eig(M.T, B.T)
 
     eigenvals, vRight = eigensol[0], eigensol[1]
-
-    np.savetxt(name+"Eigenvalues.dat", np.sort(np.abs(eigenvals)))
-
+    np.savetxt(name+"_Eigenvalues.dat", np.sort(np.abs(eigenvals)))
     minEigenvals = np.sort(np.abs(eigenvals))[:3]
 
     firstVec = np.zeros(grid.numTerms)
@@ -112,10 +121,10 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
 
     index1 = np.argmin(np.abs(eigenvals))
     #Set smallest eigenval to max, find next smallest
-    eigenvals[index1] = eigenvals[np.argmax(np.abs(eigenvals))]
+    eigenvals[index1] = eigenvals[np.argmax(np.abs(eigenvals))]*100
     index2 = np.argmin(np.abs(eigenvals))
     #set second smallest to max to find the third smallest
-    eigenvals[index2] = eigenvals[np.argmax(np.abs(eigenvals))]
+    eigenvals[index2] = eigenvals[np.argmax(np.abs(eigenvals))]*100
     index3 = np.argmin(np.abs(eigenvals))
 
     firstVec[1:numpoints+1] = vRight[:,index1].T

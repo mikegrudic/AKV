@@ -7,7 +7,9 @@ import numpy as np
 from optparse import OptionParser
 import SphericalGrid
 import AKV
+import cProfile
 from R3EmbeddedSurface import *
+import time
 
 pi=np.pi
 
@@ -30,9 +32,10 @@ p.add_option("--Lmax", type ="int", default = 15,
 
 #InitR3EmbeddedSurface(grid,R)
 grid = Ellipsoid(opts.Lmax,opts.Lmax,1.1,1)
-print grid.gthth_th
+#cProfile.run("AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm)")
+t = time.time()
 AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm)
-print grid.gthth_th
+print time.time() - t
 R = grid.R
 np.savetxt("R.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), R.flatten())))
 
