@@ -1,8 +1,8 @@
 ## path prefix for make install (installs to $(PREFIX)/lib and $(PREFIX)/include)
-PREFIX=/usr/local
-SED=/bin/sed
+PREFIX=/home/mike
+SED=/usr/bin/sed
 CC=gcc -march=native
-CFLAGS=-O2 -I/usr/local/include -L/usr/local/lib -ffast-math -fomit-frame-pointer -std=gnu99 -fopenmp -fpic
+CFLAGS=-O2 -I/home/mike/include -L/home/mike/lib -ffast-math -fomit-frame-pointer -std=gnu99 -fopenmp -fpic
 LIBS=-lfftw3_omp -lfftw3 -lrt -lm 
 PYTHON=python
 

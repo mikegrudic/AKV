@@ -5,7 +5,7 @@ from numpy import get_include
 
 numpy_inc = get_include()		#  NumPy include path.
 shtns_o = ['SHT.o', 'sht_std.o', 'sht_ltr.o', 'sht_m0.o', 'sht_m0ltr.o']
-libdir = "/usr/local"
+libdir = "/home/mike"
 if len(libdir) == 0:
 	libdir = []
 else:

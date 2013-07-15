@@ -24,18 +24,9 @@ p.add_option("--Lmax", type ="int", default = 15,
 (opts,args) = p.parse_args()
 ########################################################################################
 
-#grid = R3EmbeddedSurface(opts.Lmax, opts.Lmax)
-
-#a, b = 0.1, 4
-#grid.R = np.ones(grid.extents) + a*np.exp(-b*grid.theta**2)
-#grid.UpdateR()
-
-#InitR3EmbeddedSurface(grid,R)
-grid = Ellipsoid(opts.Lmax,opts.Lmax,1.1,1)
+grid = Ellipsoid(opts.Lmax,opts.Lmax,1,2)
 #cProfile.run("AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm)")
-t = time.time()
-AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm)
-print time.time() - t
+AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm, mNorm=opts.mNorm)
 R = grid.R
 np.savetxt("R.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), R.flatten())))
 
