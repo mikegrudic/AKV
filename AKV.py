@@ -112,11 +112,13 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
         eigensol = scipy.linalg.eig(M.T, B.T)
 
     eigenvals, vRight = eigensol[0], eigensol[1]
-    if np.count_nonzero(eigenvals.imag)>0:
-        print "Got eigenvalues with imaginary part - failed to converge!"
-        exit()
-    np.savetxt(name+"_Eigenvalues.dat", np.sort(np.abs(eigenvals)))
-    minEigenvals = np.sort(np.abs(eigenvals))[:3]
+    sorted_index = np.abs(eigenvals).argsort()
+    eigenvals, vRight = eigenvals[sorted_index],vRight[:,sorted_index]
+    np.savetxt(name+"_Eigenvalues.dat", eigenvals)
+#    print eigenvals[:3]
+#    print vRight[:,:3]
+#    exit()
+    minEigenvals = eigenvals[sorted_index][:3]
 
     firstVec = np.zeros(grid.numTerms)
     secondVec = np.zeros(grid.numTerms)

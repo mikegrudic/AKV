@@ -25,13 +25,12 @@ pi=np.pi
 grid = SphericalGrid.SphericalGrid(opts.Lmax, opts.Lmax)
 
 coeffs = np.loadtxt(opts.f)[:,2]
-
 H = grid.SpecToPhys(coeffs)
-H = RotateCoords.RotateScalarY(grid, H, pi/2)
-
+#H = RotateCoords.RotateScalarY(grid,H,-pi/2)
+#print H/grid.SpecToPhys(np.array([0,0,0,1]))
+#exit()
 grid.gthth, grid.gphph = np.exp(2*H), np.exp(2*H)*np.sin(grid.theta)**2
 grid.UpdateMetric()
-
 grid.ricci = 2.0/grid.gthth * (1.0 - grid.D2(H,1)/grid.sintheta**2 - grid.D(H,0)*grid.costheta/grid.sintheta - grid.D2(H,0))
 
 np.savetxt("ConformalFactor.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), grid.gthth.flatten())))
