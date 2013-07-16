@@ -1,0 +1,11 @@
+Add the following files to your Python path (eg. /usr/lib/python2.7/site-packages) for Python to be able to import them:
+
+AKV.py
+SphericalGrid.py
+RotateCoords/RotateCoords.py
+REmbedded/R3EmbeddedSurface.py
+
+Make sure the following python modules are installed:
+numpy
+scipy
+shtns
