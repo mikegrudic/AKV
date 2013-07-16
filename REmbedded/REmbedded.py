@@ -24,7 +24,9 @@ p.add_option("--Lmax", type ="int", default = 15,
 (opts,args) = p.parse_args()
 ########################################################################################
 
-grid = Ellipsoid(opts.Lmax,opts.Lmax,1,2)
+grid = Ellipsoid(opts.Lmax,opts.Lmax,2,1,pi/2)
+#print np.std(grid.R**2 + 4*np.cos(grid.phi)**4*grid.costheta**2*grid.sintheta**2/(4-np.sin(2*grid.phi)**2+np.cos(grid.phi)**2*grid.sintheta**2)**3 - grid.gthth)
+
 #cProfile.run("AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm)")
 AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm, mNorm=opts.mNorm)
 R = grid.R

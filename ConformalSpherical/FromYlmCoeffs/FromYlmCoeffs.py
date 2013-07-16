@@ -3,6 +3,7 @@ import scipy
 import numpy as np
 from optparse import OptionParser
 import SphericalGrid
+import RotateCoords
 import AKV
 
 #######################################################################################
@@ -21,17 +22,17 @@ p.add_option("--Lmax", type ="int", default = 15)
 pi=np.pi
 ########################################################################################
 
-print opts.Lmax
 grid = SphericalGrid.SphericalGrid(opts.Lmax, opts.Lmax)
 
 coeffs = np.loadtxt(opts.f)[:,2]
 
 H = grid.SpecToPhys(coeffs)
+H = RotateCoords.RotateScalarY(grid, H, pi/2)
 
 grid.gthth, grid.gphph = np.exp(2*H), np.exp(2*H)*np.sin(grid.theta)**2
 grid.UpdateMetric()
 
-grid.ricci = -2.0/grid.gthth * (-1.0 + grid.D2(H,1)/grid.sintheta**2 + grid.D(H,0)*grid.costheta/grid.sintheta + grid.D2(H,0))
+grid.ricci = 2.0/grid.gthth * (1.0 - grid.D2(H,1)/grid.sintheta**2 - grid.D(H,0)*grid.costheta/grid.sintheta - grid.D2(H,0))
 
 np.savetxt("ConformalFactor.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), grid.gthth.flatten())))
 np.savetxt("RicciScalar.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), grid.ricci.flatten())))

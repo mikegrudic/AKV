@@ -26,5 +26,5 @@ n = 8
 for i, angle in enumerate(np.linspace(0,pi/2,n+1)):
     name = str(i)
     print name
-    grid = Ellipsoid(opts.Lmax,opts.Lmax,1.2,1, angle)
-    AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm, name=name)
+    grid = Ellipsoid(opts.Lmax,opts.Lmax,2,1, angle)
+    AKV.AKV(grid=grid, KerrNorm=opts.KerrNorm, name=name, mNorm=opts.mNorm)

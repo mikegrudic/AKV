@@ -23,7 +23,7 @@ for f in files:
     s = np.loadtxt(f)
 
     gridShape = (opts.Lmax+1,len(s)/(opts.Lmax+1))
-
+    print gridShape
     theta = s[:,0].reshape(gridShape)
     phi = s[:,1].reshape(gridShape)
     scalar = s[:,2].reshape(gridShape)
