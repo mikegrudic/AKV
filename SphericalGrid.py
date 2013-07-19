@@ -301,15 +301,32 @@ class SphericalGrid:
         function = lambda pt: self.EvalAtPoint(coeffs, pt[0], pt[1]%(2*pi))
         return optimize.minimize(function,(gridMinTh,gridMinPh), method='SLSQP', bounds = bnds, tol = 1e-12).fun
 
-#x = SphericalGrid(15,15)
-#x.gthth = np.ones(x.extents)
-#x.gthph = 0*x.gthth
-#x.gphph = x.sintheta**2
-#x.UpdateMetric()
+    def CalcLaplaceEig(self):
+        coeffs = np.zeros(self.numTerms)
+        matrix = np.zeros((self.numTerms-1, self.numTerms-1))
 
-#for i in xrange(3,4):
-#    l, m = YlmIndex(i)
-#    coeffs = np.zeros(x.numTerms)
-#    coeffs[i] = 1.0
-#    s = x.SpecToPhys(coeffs)
-#    np.std(x.Laplacian(s) + l*(l+1)*s)
+        for i in xrange(1,self.numTerms):
+            coeffs = np.zeros(self.numTerms)
+            coeffs[i] = 1.0
+            Lf_s = self.PhysToSpec(self.Laplacian(self.SpecToPhys(coeffs)))
+            matrix[i-1] = Lf_s[1:]
+           
+        matrix[np.abs(matrix) < 1e-13] = 0
+
+        self.lap_eig, self.lap_vec = scipy.linalg.eig(matrix.T)
+
+        sort_index = np.abs(self.lap_eig).argsort()
+        self.lap_eig, self.lap_vec = self.lap_eig[sort_index], self.lap_vec[:,sort_index]
+
+        # Must deal with case of complex vector components - construct a real basis by combining degenerate complex conjugates
+        complex_index = self.lap_vec.imag.nonzero()
+
+        for vector in self.lap_vec.T[complex_index]:
+#            vector, lap
+            print vector
+
+        I = np.identity(self.numTerms, dtype=np.complex128)
+        I[1:,1:] = self.lap_vec
+        self.lap_vec = I
+        self.lap_eig = np.insert(self.lap_eig,0,0.0)
+        self.lap_basis = np.array([self.SpecToPhys(self.lap_vec[:,i].real) for i in xrange(self.numTerms)])

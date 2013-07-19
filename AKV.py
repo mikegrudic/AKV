@@ -43,7 +43,6 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
     #number of terms in spectral expansion to solve for (SpEC code goes up to Lmax-2)
     numpoints = (LL-2)*(LL-2)-1
 
-
     #Real space quantities
     f = np.zeros(grid.extents)
     Lf = np.zeros(grid.extents)
@@ -120,21 +119,26 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
 #    exit()
     minEigenvals = eigenvals[sorted_index][:3]
 
+#    for vec in vRight.T[:3]:
+#        complex_index = vec.imag.nonzero()
+#        print complex_index
+
     firstVec = np.zeros(grid.numTerms)
     secondVec = np.zeros(grid.numTerms)
     thirdVec = np.zeros(grid.numTerms)
 
-    index1 = np.argmin(np.abs(eigenvals))
+#    index1 = np.argmin(np.abs(eigenvals))
     #Set smallest eigenval to max, find next smallest
-    eigenvals[index1] = eigenvals[np.argmax(np.abs(eigenvals))]*100
-    index2 = np.argmin(np.abs(eigenvals))
+#    eigenvals[index1] = eigenvals[np.argmax(np.abs(eigenvals))]*100
+#    index2 = np.argmin(np.abs(eigenvals))
     #set second smallest to max to find the third smallest
-    eigenvals[index2] = eigenvals[np.argmax(np.abs(eigenvals))]*100
-    index3 = np.argmin(np.abs(eigenvals))
+#    eigenvals[index2] = eigenvals[np.argmax(np.abs(eigenvals))]*100
+#    index3 = np.argmin(np.abs(eigenvals))
+#    print np.std(vRight.imag)
 
-    firstVec[1:numpoints+1] = vRight[:,index1].T
-    secondVec[1:numpoints+1] = vRight[:,index2].T
-    thirdVec[1:numpoints+1] = vRight[:,index3].T
+    firstVec[1:numpoints+1] = vRight[:,0].T.real
+    secondVec[1:numpoints+1] = vRight[:,1].T.real
+    thirdVec[1:numpoints+1] = vRight[:,2].T.real
 
     first_pot = grid.SpecToPhys(firstVec)
     second_pot = grid.SpecToPhys(secondVec)
