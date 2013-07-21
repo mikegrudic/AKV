@@ -225,6 +225,9 @@ class SphericalGrid:
     def Raise(self, form):
         return np.array((form[0]*self.ginvthth + form[1]*self.ginvthph, form[1]*self.ginvphph + form[0]*self.ginvthph))
 
+    def VecLength(self, vector):
+        return np.sqrt(self.gthth*vector[0]**2 + 2*self.gthph*vector[0]*vector[1] + self.gphph*vector[1]**2)
+
 ##### Div ##########################################
 # Computes the divergence of a vector
 # IN: vec - 2-component vector on grid
