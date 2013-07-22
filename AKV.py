@@ -5,7 +5,7 @@ import SphericalGrid
 
 pi = np.pi
 
-def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", return_grid=False, name='AKV', use_sparse_alg=False):
+def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", return_eigs=False, name='AKV', use_sparse_alg=False, IO=True):
     """ AKV 
     Returns the 3 minimum shear approximate killing vectors of a 2-manifold with
     (theta, phi) coordinates, and the SphericalGrid containing all the pseudospectral grid information
@@ -19,7 +19,7 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
     KerrNorm - whether to use the integral normalization as in Lovelace 2008. By default
     extrema normalization is used
     mNorm - either "Owen" or "CookWhiting" - default Owen
-    return_grid - whether to return the SphericalGrid
+    return_eigs - whether to return the 3 minimum eigenvalues
     name - leading characters in output files - default 'AKV'
 
     OUTPUT FILES:
@@ -113,7 +113,6 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
     eigenvals, vRight = eigensol[0], eigensol[1]
     sorted_index = np.abs(eigenvals).argsort()
     eigenvals, vRight = eigenvals[sorted_index],vRight[:,sorted_index]
-    np.savetxt(name+"_Eigenvalues.dat", eigenvals)
 #    print eigenvals[:3]
 #    print vRight[:,:3]
 #    exit()
@@ -174,18 +173,20 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
     AKV1 = grid.Hodge(grid.D(first_pot))
     AKV2 = grid.Hodge(grid.D(second_pot))
     AKV3 = grid.Hodge(grid.D(third_pot))
-        
-    np.savetxt(name+"_pot1.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),first_pot.flatten())))
-    np.savetxt(name+"_pot2.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),second_pot.flatten())))
-    np.savetxt(name+"_pot3.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),third_pot.flatten())))
-    np.savetxt(name+"_Ylm1.dat",np.column_stack((l,m,firstVec)),fmt="%d\t%d\t%g")
-    np.savetxt(name+"_Ylm2.dat",np.column_stack((l,m,secondVec)),fmt="%d\t%d\t%g")
-    np.savetxt(name+"_Ylm3.dat",np.column_stack((l,m,thirdVec)),fmt="%d\t%d\t%g")
-    np.savetxt(name+"_vec1.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV1[0].flatten(), AKV1[1].flatten())))
-    np.savetxt(name+"_vec2.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV2[0].flatten(), AKV2[1].flatten())))
-    np.savetxt(name+"_vec3.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV3[0].flatten(), AKV3[1].flatten())))
 
-    if return_grid==True:
-        return AKV1, AKV2, AKV3, grid
+    if IO==True:
+        np.savetxt(name+"_Eigenvalues.dat", eigenvals)
+        np.savetxt(name+"_pot1.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),first_pot.flatten())))
+        np.savetxt(name+"_pot2.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),second_pot.flatten())))
+        np.savetxt(name+"_pot3.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),third_pot.flatten())))
+        np.savetxt(name+"_Ylm1.dat",np.column_stack((l,m,firstVec)),fmt="%d\t%d\t%g")
+        np.savetxt(name+"_Ylm2.dat",np.column_stack((l,m,secondVec)),fmt="%d\t%d\t%g")
+        np.savetxt(name+"_Ylm3.dat",np.column_stack((l,m,thirdVec)),fmt="%d\t%d\t%g")
+        np.savetxt(name+"_vec1.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV1[0].flatten(), AKV1[1].flatten())))
+        np.savetxt(name+"_vec2.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV2[0].flatten(), AKV2[1].flatten())))
+        np.savetxt(name+"_vec3.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV3[0].flatten(), AKV3[1].flatten())))
+
+    if return_eigs==True:
+        return AKV1, AKV2, AKV3, minEigenvals
     else:
         return AKV1, AKV2, AKV3

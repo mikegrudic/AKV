@@ -25,5 +25,5 @@ p.add_option("--J", type="float", default=0.0)
 a = opts.J/opts.M
 blackHole = KerrMetric.KerrMetric(opts.M,a)
 t=time.time()
-AKV.AKV(blackHole.HorizonMetric, blackHole.HorizonRicci, Lmax=opts.Lmax, KerrNorm=opts.KerrNorm, mNorm=opts.mNorm, return_grid=True)
+AKV.AKV(blackHole.HorizonMetric, blackHole.HorizonRicci, Lmax=opts.Lmax, KerrNorm=opts.KerrNorm, mNorm=opts.mNorm)
 print time.time()-t
