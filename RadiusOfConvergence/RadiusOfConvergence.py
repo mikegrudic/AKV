@@ -45,10 +45,16 @@ grid.ricci = -2.0/grid.gthth * (-1.0 + grid.D2(H,1)/grid.sintheta**2 + grid.D(H,
 sphere_akv = np.array(AKV.AKV(grid=grid, IO=False))
 
 amax = 1
-coeff_range = np.linspace(0,amax,301)
+nPoints = 301
+coeff_range = np.linspace(0,amax,nPoints+1)
+
+da = float(amax)/nPoints
 
 for i in xrange(4,grid.numTerms):
     l, m = grid.l[i], grid.m[i]
+    if grid.m[i] < 0: continue
     print l, m
     error = np.array([ConformalError(grid,l,m,a) for a in coeff_range])
-    np.savetxt("Ylm%d%dError.dat"%(l,m), np.column_stack((coeff_range, error, np.gradient(error))))
+    d_error = np.gradient(error, da)
+    d2_error = np.gradient(d_error, da)
+    np.savetxt("Ylm%d%dError.dat"%(l,m), np.column_stack((coeff_range, error, d_error, d2_error)))

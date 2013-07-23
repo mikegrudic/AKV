@@ -17,15 +17,16 @@ if opts.f==None: dataFiles = glob.glob("*.dat")
 else: dataFiles = glob.glob(opts.f)
 
 for f in dataFiles:
-    print f
+#    print f
     data = np.loadtxt(f)
     name = f.split(".")[0]
 
     x, y = data[:,opts.xCol], data[:,opts.yCol]
 
     std_dev = np.std(y)
-    spike_index = (np.abs(y) > 3*std_dev)
+    spike_index = (np.abs(y) > 2*std_dev)
     spike_points = x[spike_index]
     spike_values = y[spike_index]
 #    np.savetxt("D"+name+".dat", np.column_stack((data[:,opts.xCol],np.gradient(data[:,opts.yCol]))))
-    print spike_points[0]
+    if spike_points.size != 0:
+        print name, spike_points[0]
