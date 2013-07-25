@@ -249,10 +249,11 @@ class SphericalGrid:
 # OUT: div grad scalar
 ##########################################################
 
-    def Laplacian(self, scalar): 
+    def Laplacian(self, scalar, dth=None, dph=None): 
         coeffs = self.PhysToSpec(scalar)
         d2phph = self.SpecToPhys(-self.m*self.m*coeffs)
-        dth,dph = self.grid.synth_grad(self.StandardToShtns(coeffs))
+        if dth==None:
+            dth,dph = self.grid.synth_grad(self.StandardToShtns(coeffs))
         dthph = self.D(dth,0)
         sph_laplacian = self.SpecToPhys(-self.l*(self.l+1)*coeffs)
         d2thth = sph_laplacian - d2phph/(self.sintheta*self.sintheta) - dth*self.costheta/self.sintheta

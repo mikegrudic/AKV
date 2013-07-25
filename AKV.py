@@ -76,7 +76,7 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
         #act operators to construct H Ylm in real space
         Df = grid.D(f)
 
-        Lf = grid.Laplacian(f)
+        Lf = grid.Laplacian(f, Df[0], Df[1])
         Lf_s = grid.PhysToSpec(Lf)
 
         LLf = grid.Laplacian(Lf)
@@ -90,12 +90,11 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
             CWBf_s = grid.PhysToSpec(CWBf);
 
         #Populate the matrices
-        M[i-1] = Hf_s[1:numpoints+1]
-
+        M[:,i-1] = Hf_s[1:numpoints+1]
         if mNorm == "Owen":
-            B[i-1] = Lf_s[1:numpoints+1]
+            B[:,i-1] = Lf_s[1:numpoints+1]
         else:
-            B[i-1] = CWBf_s[1:numpoints+1]
+            B[:,i-1] = CWBf_s[1:numpoints+1]
 
     # Solve the generalized eigenvalue problem
     if use_sparse_alg:
@@ -103,19 +102,16 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
         M[np.abs(M) < 1e-12] = 0.0
         B[np.abs(B) < 1e-12] = 0.0
 
-        invB = scipy.linalg.inv(B.T)
+        invB = scipy.linalg.inv(B)
         invB = scipy.sparse.csr_matrix(invB)
-        M = scipy.sparse.csr_matrix(M.T)
+        M = scipy.sparse.csr_matrix(M)
         eigensol = scipy.sparse.linalg.eigs(invB*M, 3, which='SM')
     else:
-        eigensol = scipy.linalg.eig(M.T, B.T)
+        eigensol = scipy.linalg.eig(M, B)
 
     eigenvals, vRight = eigensol[0], eigensol[1]
     sorted_index = np.abs(eigenvals).argsort()
     eigenvals, vRight = eigenvals[sorted_index],vRight[:,sorted_index]
-#    print eigenvals[:3]
-#    print vRight[:,:3]
-#    exit()
     minEigenvals = eigenvals[sorted_index][:3]
 
 #    for vec in vRight.T[:3]:
