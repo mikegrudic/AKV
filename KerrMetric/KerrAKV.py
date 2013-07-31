@@ -12,7 +12,7 @@ import AKV
 
 p=OptionParser()
 p.add_option("--mNorm", type="string", help="Which norm to use for AKV: either 'Cook-Whiting' or 'Owen'", default="Owen")
-p.add_option("--KerrNorm", default = False)
+p.add_option("--KerrNorm", default = True)
 p.add_option("--Lmax", type ="int", default = 15,
              help = "Maximum degree of spherical harmonic expansion")
 p.add_option("--M", type="float", default=1.0)

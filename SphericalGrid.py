@@ -27,7 +27,7 @@ def YlmIndex(n1, n2 = None):
 
 class SphericalGrid:
     def __init__(self, Lmax, Mmax, fmetric=None, fricci=None):
-        self.grid = shtns.sht(Lmax,Mmax, norm=shtns.SHT_REAL_NORM)
+        self.grid = shtns.sht(Lmax,Mmax, norm=shtns.SHT_REAL_NORM, nthreads=4)
         self.Lmax = Lmax
         self.nTheta, self.nPhi = self.grid.set_grid()
         self.nlm = self.grid.nlm
@@ -334,3 +334,4 @@ class SphericalGrid:
         self.lap_vec = I
         self.lap_eig = np.insert(self.lap_eig,0,0.0)
         self.lap_basis = np.array([self.SpecToPhys(self.lap_vec[:,i].real) for i in xrange(self.numTerms)])
+
