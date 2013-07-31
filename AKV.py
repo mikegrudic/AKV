@@ -107,29 +107,37 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
         M = scipy.sparse.csr_matrix(M)
         eigensol = scipy.sparse.linalg.eigs(invB*M, 3, which='SM')
     else:
-        eigensol = scipy.linalg.eig(M, B)
+        eigensol = scipy.linalg.eig(M, B, left=True)
 
-    eigenvals, vRight = eigensol[0], eigensol[1]
+    eigenvals, vLeft, vRight = eigensol#[0], eigensol[1]
+
+    vRight /= np.sqrt(np.sum(np.abs(vRight)**2, axis=0))
+    vLeft /= np.sqrt(np.sum(np.abs(vLeft)**2, axis=0))
+#    np.savetxt("M.dat", sphere_M-M)
+
     sorted_index = np.abs(eigenvals).argsort()
-    eigenvals, vRight = eigenvals[sorted_index],vRight[:,sorted_index]
+#    sorted_index = np.abs(np.diag(M)).argsort()
+    eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
     minEigenvals = eigenvals[sorted_index][:3]
 
-#    for vec in vRight.T[:3]:
-#        complex_index = vec.imag.nonzero()
-#        print complex_index
+#    sphere_L_s = np.diag(-grid.l[1:numpoints+1]*(grid.l[1:numpoints+1]+1))
+#    sphere_M = sphere_L_s**2 + 2.0*sphere_L_s
+#    print np.std(M-sphere_M), np.std(B-sphere_L_s)
+#    print scipy.linalg.norm(M, ord='fro')-scipy.linalg.norm(sphere_M)
+#    print scipy.linalg.norm(M - sphere_M, ord=1)
+#    deltaM = scipy.linalg.norm(M - sphere_M,ord='fro')
+#    deltaL = scipy.linalg.norm(B - sphere_L_s, ord='fro')
+#    delta = np.sqrt(deltaM**2 + deltaL**2)
+#    print deltaM, deltaL, delta
+#    print delta
+#    print "LHS/RHS:", np.abs(minEigenvals[0])/np.sqrt(1+np.abs(minEigenvals[0])**2), delta
+
+#    np.savetxt("right.dat",np.diag(vLeft))
+#    np.savetxt("Gamma.dat", np.diag(np.dot(vLeft.T,np.dot(B,vRight))))
 
     firstVec = np.zeros(grid.numTerms)
     secondVec = np.zeros(grid.numTerms)
     thirdVec = np.zeros(grid.numTerms)
-
-#    index1 = np.argmin(np.abs(eigenvals))
-    #Set smallest eigenval to max, find next smallest
-#    eigenvals[index1] = eigenvals[np.argmax(np.abs(eigenvals))]*100
-#    index2 = np.argmin(np.abs(eigenvals))
-    #set second smallest to max to find the third smallest
-#    eigenvals[index2] = eigenvals[np.argmax(np.abs(eigenvals))]*100
-#    index3 = np.argmin(np.abs(eigenvals))
-#    print np.std(vRight.imag)
 
     firstVec[1:numpoints+1] = vRight[:,0].T.real
     secondVec[1:numpoints+1] = vRight[:,1].T.real

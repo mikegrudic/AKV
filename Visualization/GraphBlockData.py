@@ -12,6 +12,7 @@ p.add_option("--xCol", type="int", default=0)
 p.add_option("--yCol", type="int", default=1)
 p.add_option("--xLabel", type="string", default="")
 p.add_option("--yLabel", type="string", default="")
+p.add_option("--MultipleGraphs", default=True)
 
 (opts,args) = p.parse_args()
 
@@ -27,4 +28,8 @@ for f in dataFiles:
     plt.ylabel(opts.yLabel)
     plt.title(name)
     plt.savefig(name+".png")
-    plt.clf()
+    if opts.MultipleGraphs==True:
+        plt.clf()
+
+#if opts.MultipleGraphs==False:
+#    plt.savefig("graph.png")
