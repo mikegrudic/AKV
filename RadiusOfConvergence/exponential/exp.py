@@ -12,6 +12,7 @@ pi=np.pi
 
 def VecError(grid, v1, v2):
     return np.sqrt(grid.Integrate(grid.VecLength(v1-v2)**2)/grid.Integrate(np.ones(grid.extents)))
+
 def PotentialError(grid,pot1,pot2):
     return np.sqrt(grid.Integrate((pot1-pot2)**2)/grid.Integrate(np.ones(grid.extents)))
 
@@ -45,8 +46,8 @@ sphere_solution = AKVSolution(grid=grid,IO=False)
 sphere_akv = sphere_solution.GetAKV()
 sphere_pot = sphere_solution.GetPotentials()
 
-amax = 1
-nPoints = 301
+amax = 0.5
+nPoints = 151
 coeff_range = np.linspace(0,amax,nPoints)
 
 da = float(amax)/nPoints
@@ -56,6 +57,8 @@ Eigenvalue_all = []
 Potential_all = []
 AKV_error_all = []
 pot_error_all = []
+delta_H_all = []
+delta_L_all = []
 
 for i in xrange(4,grid.numTerms):
     l, m = grid.l[i], grid.m[i]
@@ -67,6 +70,8 @@ for i in xrange(4,grid.numTerms):
     akvs = [sol.GetAKV() for sol in sols]
     eigs = [sol.GetEigs() for sol in sols]
     potentials = [sol.GetPotentials() for sol in sols]
+    delta_H = [sol.GetMatrixNorms()[0] for sol in sols]
+    delta_L = [sol.GetMatrixNorms()[1] for sol in sols]
     pot_errors = []
     vec_errors = []
     for i in xrange(nPoints):
@@ -84,9 +89,13 @@ for i in xrange(4,grid.numTerms):
     Potential_all.append(potentials)
     AKV_error_all.append(vec_errors)
     pot_error_all.append(pot_errors)
+    delta_H_all.append(delta_H)
+    delta_L_all.append(delta_L)
 
 np.save("AKV", np.array(AKV_all))
 np.save("Eigenvalues", np.array(Eigenvalue_all))
 np.save("Potentials", np.array(Potential_all))
 np.save("AKV_Error", np.array(AKV_error_all))
 np.save("Potential_error", np.array(pot_error_all))
+np.save("delta_H", np.array(delta_H_all))
+np.save("delta_L", np.array(delta_L_all))

@@ -58,9 +58,12 @@ class AKVSolution:
         Hf_s = np.zeros(grid.numTerms)
         CWBf_s = np.zeros(grid.numTerms)
 
+        self.sphere_L_s = np.diag(-grid.l[1:numpoints+1]*(grid.l[1:numpoints+1]+1))
+        self.sphere_M = self.sphere_L_s**2 + 2.0*self.sphere_L_s
+
         #Matrices - M for H, B for Laplacian
-        M = np.zeros((numpoints, numpoints))
-        B = np.zeros((numpoints, numpoints))
+        self.M = np.zeros((numpoints, numpoints))
+        self.B = np.zeros((numpoints, numpoints))
 
         dR = grid.D(grid.ricci)
         gradR = grid.Raise(dR)
@@ -90,50 +93,35 @@ class AKVSolution:
                 CWBf_s = grid.PhysToSpec(CWBf);
 
             #Populate the matrices
-            M[:,i-1] = Hf_s[1:numpoints+1]
+            self.M[:,i-1] = Hf_s[1:numpoints+1]
             if mNorm == "Owen":
-                B[:,i-1] = Lf_s[1:numpoints+1]
+                self.B[:,i-1] = Lf_s[1:numpoints+1]
             else:
-                B[:,i-1] = CWBf_s[1:numpoints+1]
+                self.B[:,i-1] = CWBf_s[1:numpoints+1]
 
         # Solve the generalized eigenvalue problem
         if use_sparse_alg:
     #  Truncate all "small" values to 0 to make matrix sparse
-            M[np.abs(M) < 1e-12] = 0.0
-            B[np.abs(B) < 1e-12] = 0.0
+            self.M[np.abs(M) < 1e-12] = 0.0
+            self.B[np.abs(B) < 1e-12] = 0.0
 
             invB = scipy.linalg.inv(B)
             invB = scipy.sparse.csr_matrix(invB)
-            M = scipy.sparse.csr_matrix(M)
-            eigensol = scipy.sparse.linalg.eigs(invB*M, 3, which='SM')
+            self.M = scipy.sparse.csr_matrix(self.M)
+            eigensol = scipy.sparse.linalg.eigs(invB*self.M, 3, which='SM')
         else:
-            eigensol = scipy.linalg.eig(M, B, left=True)
+            eigensol = scipy.linalg.eig(self.M, self.B, left=True)
 
+        #Solve eigenvalue problem
         eigenvals, vLeft, vRight = eigensol
 
-#        vRight /= np.sqrt(np.sum(np.abs(vRight)**2, axis=0))
-#        vLeft /= np.sqrt(np.sum(np.abs(vLeft)**2, axis=0))
-    #    np.savetxt("M.dat", sphere_M-M)
+        vRight /= np.sqrt(np.sum(np.abs(vRight)**2, axis=0))
+        vLeft /= np.sqrt(np.sum(np.abs(vLeft)**2, axis=0))
 
         sorted_index = np.abs(eigenvals).argsort()
-    #    sorted_index = np.abs(np.diag(M)).argsort()
+
         eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
         self.minEigenvals = eigenvals[sorted_index][:3]
-
-    #    sphere_L_s = np.diag(-grid.l[1:numpoints+1]*(grid.l[1:numpoints+1]+1))
-    #    sphere_M = sphere_L_s**2 + 2.0*sphere_L_s
-    #    print np.std(M-sphere_M), np.std(B-sphere_L_s)
-    #    print scipy.linalg.norm(M, ord='fro')-scipy.linalg.norm(sphere_M)
-    #    print scipy.linalg.norm(M - sphere_M, ord=1)
-    #    deltaM = scipy.linalg.norm(M - sphere_M,ord='fro')
-    #    deltaL = scipy.linalg.norm(B - sphere_L_s, ord='fro')
-    #    delta = np.sqrt(deltaM**2 + deltaL**2)
-    #    print deltaM, deltaL, delta
-    #    print delta
-    #    print "LHS/RHS:", np.abs(minEigenvals[0])/np.sqrt(1+np.abs(minEigenvals[0])**2), delta
-
-    #    np.savetxt("right.dat",np.diag(vLeft))
-    #    np.savetxt("Gamma.dat", np.diag(np.dot(vLeft.T,np.dot(B,vRight))))
 
         self.vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
 
@@ -177,3 +165,8 @@ class AKVSolution:
 
     def GetEigs(self):
         return self.minEigenvals
+
+    def GetMatrixNorms(self):
+        deltaM = scipy.linalg.norm(self.M - self.sphere_M,ord='fro')
+        deltaL = scipy.linalg.norm(self.B - self.sphere_L_s, ord='fro')
+        return deltaM, deltaL
