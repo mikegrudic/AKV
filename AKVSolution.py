@@ -121,7 +121,7 @@ class AKVSolution:
         sorted_index = np.abs(eigenvals).argsort()
 
         eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
-        self.minEigenvals = eigenvals[sorted_index][:3]
+        self.minEigenvals = eigenvals[:3]
 
         self.vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
 

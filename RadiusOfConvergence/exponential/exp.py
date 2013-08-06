@@ -59,16 +59,20 @@ AKV_error_all = []
 pot_error_all = []
 delta_H_all = []
 delta_L_all = []
+lm = []
 
 for i in xrange(4,grid.numTerms):
     l, m = grid.l[i], grid.m[i]
     if m < 0: continue
     if l > 9: break
     print l, m
+    lm.append((l,m))
+    
     sols = np.array([ConformalAKVSol(grid,l,m,a) for a in coeff_range])
 
     akvs = [sol.GetAKV() for sol in sols]
     eigs = [sol.GetEigs() for sol in sols]
+    print eigs[1]
     potentials = [sol.GetPotentials() for sol in sols]
     delta_H = [sol.GetMatrixNorms()[0] for sol in sols]
     delta_L = [sol.GetMatrixNorms()[1] for sol in sols]
@@ -99,3 +103,5 @@ np.save("AKV_Error", np.array(AKV_error_all))
 np.save("Potential_error", np.array(pot_error_all))
 np.save("delta_H", np.array(delta_H_all))
 np.save("delta_L", np.array(delta_L_all))
+np.save("a", coeff_range)
+np.save("lm", np.array(lm))
