@@ -118,7 +118,7 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
     sorted_index = np.abs(eigenvals).argsort()
 #    sorted_index = np.abs(np.diag(M)).argsort()
     eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
-    minEigenvals = eigenvals[sorted_index][:3]
+    minEigenvals = eigenvals[:3]
 
 #    sphere_L_s = np.diag(-grid.l[1:numpoints+1]*(grid.l[1:numpoints+1]+1))
 #    sphere_M = sphere_L_s**2 + 2.0*sphere_L_s
