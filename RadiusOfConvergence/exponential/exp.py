@@ -46,8 +46,8 @@ sphere_solution = AKVSolution(grid=grid,IO=False)
 sphere_akv = sphere_solution.GetAKV()
 sphere_pot = sphere_solution.GetPotentials()
 
-amax = 0.5
-nPoints = 151
+amax = 0.1
+nPoints = 51
 coeff_range = np.linspace(0,amax,nPoints)
 
 da = float(amax)/nPoints

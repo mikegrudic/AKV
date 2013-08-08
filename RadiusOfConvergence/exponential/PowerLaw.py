@@ -22,7 +22,8 @@ out = open("PowerLaw.dat","w")
 for f in dataFiles:
     dat = np.loadtxt(f)
     X, Y = dat[:,opts.xCol], dat[:,opts.yCol]
-    error = lambda p, y, x: p[0]*x - y
-    lsq = leastsq(error, [1e-6], args=(Y,X), ftol=1e-16)
-    residual = np.std(error(lsq, Y, X))/np.max(np.abs(Y))
-    print f, lsq[0], residual
+    error = lambda p, y, x: p*x**2.0 - y
+    lsq = leastsq(error, [-1e-3], args=(Y,X))
+    print f,lsq[0]
+#    residual = np.std(error(lsq, Y, X))/np.max(np.abs(Y))
+#    print f, lsq[0], residual

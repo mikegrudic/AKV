@@ -1,4 +1,4 @@
-#!/usr/bin/env python                                                                                                                                
+#!/usr/bin/env python                                                                                                             
 import scipy
 import sys
 import numpy as np
@@ -69,6 +69,7 @@ for i in xrange(4,grid.numTerms):
 
     akvs = [sol.GetAKV() for sol in sols]
     eigs = [sol.GetEigs() for sol in sols]
+    print eigs[0][0]
     potentials = [sol.GetPotentials() for sol in sols]
     delta_H = [sol.GetMatrixNorms()[0] for sol in sols]
     delta_L = [sol.GetMatrixNorms()[1] for sol in sols]
@@ -99,3 +100,4 @@ np.save("AKV_Error", np.array(AKV_error_all))
 np.save("Potential_error", np.array(pot_error_all))
 np.save("delta_H", np.array(delta_H_all))
 np.save("delta_L", np.array(delta_L_all))
+np.save("a", coeff_range)

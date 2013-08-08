@@ -111,29 +111,13 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
 
     eigenvals, vLeft, vRight = eigensol#[0], eigensol[1]
 
-    vRight /= np.sqrt(np.sum(np.abs(vRight)**2, axis=0))
-    vLeft /= np.sqrt(np.sum(np.abs(vLeft)**2, axis=0))
-#    np.savetxt("M.dat", sphere_M-M)
+#    vRight /= np.sqrt(np.sum(np.abs(vRight)**2, axis=0))
+#    vLeft /= np.sqrt(np.sum(np.abs(vLeft)**2, axis=0))
 
     sorted_index = np.abs(eigenvals).argsort()
-#    sorted_index = np.abs(np.diag(M)).argsort()
+
     eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
     minEigenvals = eigenvals[:3]
-
-#    sphere_L_s = np.diag(-grid.l[1:numpoints+1]*(grid.l[1:numpoints+1]+1))
-#    sphere_M = sphere_L_s**2 + 2.0*sphere_L_s
-#    print np.std(M-sphere_M), np.std(B-sphere_L_s)
-#    print scipy.linalg.norm(M, ord='fro')-scipy.linalg.norm(sphere_M)
-#    print scipy.linalg.norm(M - sphere_M, ord=1)
-#    deltaM = scipy.linalg.norm(M - sphere_M,ord='fro')
-#    deltaL = scipy.linalg.norm(B - sphere_L_s, ord='fro')
-#    delta = np.sqrt(deltaM**2 + deltaL**2)
-#    print deltaM, deltaL, delta
-#    print delta
-#    print "LHS/RHS:", np.abs(minEigenvals[0])/np.sqrt(1+np.abs(minEigenvals[0])**2), delta
-
-#    np.savetxt("right.dat",np.diag(vLeft))
-#    np.savetxt("Gamma.dat", np.diag(np.dot(vLeft.T,np.dot(B,vRight))))
 
     firstVec = np.zeros(grid.numTerms)
     secondVec = np.zeros(grid.numTerms)
@@ -144,15 +128,7 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
     for i, vec in enumerate(vecs):
         vec[1:numpoints+1] = vRight[:,i].T.real
 
-#    firstVec[1:numpoints+1] = vRight[:,0].T.real
-#    secondVec[1:numpoints+1] = vRight[:,1].T.real
-#    thirdVec[1:numpoints+1] = vRight[:,2].T.real
-
     potentials = [grid.SpecToPhys(vec) for vec in vecs]
-
-#    first_pot = grid.SpecToPhys(firstVec)
-#    second_pot = grid.SpecToPhys(secondVec)
-#    third_pot = grid.SpecToPhys(thirdVec)
 
     Area = grid.Integrate(np.ones(grid.extents))
 
@@ -161,39 +137,15 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
             potential_avg = grid.Integrate(potentials[i])
             normint = grid.Integrate((potentials[i]-potential_avg)**2)
             norm = np.sqrt(Area**3/(48.0*pi**2*normint))
-#        pot1avg = grid.Integrate(first_pot)/Area
-#        pot2avg = grid.Integrate(second_pot)/Area
-#        pot3avg = grid.Integrate(third_pot)/Area
-
-#        normint1 = grid.Integrate((first_pot-pot1avg)**2)
-#        normint2 = grid.Integrate((second_pot-pot2avg)**2)
-#        normint3 = grid.Integrate((third_pot-pot3avg)**2)
-#        norm1 = np.sqrt(Area**3/(48.0*pi**2*normint1))
-#        norm2 = np.sqrt(Area**3/(48.0*pi**2*normint2))
-#        norm3 = np.sqrt(Area**3/(48.0*pi**2*normint3))
         else:
             min, max = grid.Minimize(potentials[i]), -grid.Minimize(-potentials[i])
             norm = Area/(2*pi*(max-min))
 
         vecs[i] = vecs[i] * norm
         potentials[i] = potentials[i] * norm
-#        min1, max1 = grid.Minimize(first_pot), -grid.Minimize(-first_pot)
-#        min2, max2 = grid.Minimize(second_pot), -grid.Minimize(-second_pot)
-#        min3, max3 = grid.Minimize(third_pot), -grid.Minimize(-third_pot)
-#        norm1 = Area/(2*pi*(max1-min1))
-#        norm2 = Area/(2*pi*(max2-min2))
-#        norm3 = Area/(2*pi*(max3-min3))
 
-#    first_pot = first_pot * norm1
-#    firstVec = firstVec * norm1
-#    second_pot = second_pot * norm2
-#    secondVec = secondVec * norm2
-#    third_pot = third_pot * norm3
-#    thirdVec = thirdVec * norm3
     AKVs = [grid.Hodge(grid.D(pot)) for pot in potentials]
-#    AKV1 = grid.Hodge(grid.D(first_pot))
-#    AKV2 = grid.Hodge(grid.D(second_pot))
-#    AKV3 = grid.Hodge(grid.D(third_pot))
+
 
     if IO==True:
         np.savetxt(name+"_Eigenvalues.dat", eigenvals)
@@ -201,16 +153,7 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
             np.savetxt(name+"_pot"+str(i+1)+".dat", np.column_stack((grid.theta.flatten(),grid.phi.flatten(),potentials[i].flatten())))
             np.savetxt(name+"_Ylm"+str(i+1)+".dat", np.column_stack((l,m,vecs[i])),fmt="%d\t%d\t%g")
             np.savetxt(name+"_vec"+str(i+1)+".dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKVs[i][0].flatten(), AKVs[i][1].flatten())))
-            
-#        np.savetxt(name+"_pot1.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),first_pot.flatten())))
-#        np.savetxt(name+"_pot2.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),second_pot.flatten())))
-#        np.savetxt(name+"_pot3.dat",np.column_stack((grid.theta.flatten(),grid.phi.flatten(),third_pot.flatten())))
-#        np.savetxt(name+"_Ylm1.dat",np.column_stack((l,m,firstVec)),fmt="%d\t%d\t%g")
-#        np.savetxt(name+"_Ylm2.dat",np.column_stack((l,m,secondVec)),fmt="%d\t%d\t%g")
-#        np.savetxt(name+"_Ylm3.dat",np.column_stack((l,m,thirdVec)),fmt="%d\t%d\t%g")
-#        np.savetxt(name+"_vec1.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV1[0].flatten(), AKV1[1].flatten())))
-#        np.savetxt(name+"_vec2.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV2[0].flatten(), AKV2[1].flatten())))
-#        np.savetxt(name+"_vec3.dat", np.column_stack((grid.theta.flatten(), grid.phi.flatten(), AKV3[0].flatten(), AKV3[1].flatten())))
+
 
     if return_eigs==True:
         return AKVs, minEigenvals

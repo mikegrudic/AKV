@@ -19,7 +19,7 @@ p.add_option("--MultipleGraphs", default=True)
 if opts.f==None: dataFiles = glob.glob("*.dat")
 else: dataFiles = glob.glob(opts.f)
 
-for f in dataFiles:
+def PlotGraph(f):
     print f
     data = np.loadtxt(f)
     name = f.split(".")[0]
@@ -31,5 +31,5 @@ for f in dataFiles:
     if opts.MultipleGraphs==True:
         plt.clf()
 
-#if opts.MultipleGraphs==False:
-#    plt.savefig("graph.png")
+for f in dataFiles:
+    PlotGraph(f)
