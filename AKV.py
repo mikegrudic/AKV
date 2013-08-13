@@ -77,9 +77,11 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
         Df = grid.D(f)
 
         Lf = grid.Laplacian(f, Df[0], Df[1])
+
         Lf_s = grid.PhysToSpec(Lf)
 
         LLf = grid.Laplacian(Lf)
+
         RLf = grid.ricci*Lf
         gradRgradf = gradR[0]*Df[0] + gradR[1]*Df[1]
         Hf = LLf + RLf + gradRgradf
@@ -118,10 +120,6 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
 
     eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
     minEigenvals = eigenvals[:3]
-
-    firstVec = np.zeros(grid.numTerms)
-    secondVec = np.zeros(grid.numTerms)
-    thirdVec = np.zeros(grid.numTerms)
 
     vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
 

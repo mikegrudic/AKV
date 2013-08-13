@@ -26,6 +26,7 @@ grid = SphericalGrid.SphericalGrid(opts.Lmax, opts.Lmax)
 
 coeffs = np.loadtxt(opts.f)[:,2]
 H = grid.SpecToPhys(coeffs)
+
 #H = RotateCoords.RotateScalarY(grid,H,-pi/2)
 #print H/grid.SpecToPhys(np.array([0,0,0,1]))
 #exit()
