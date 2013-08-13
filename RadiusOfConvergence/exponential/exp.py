@@ -59,11 +59,12 @@ AKV_error_all = []
 pot_error_all = []
 delta_H_all = []
 delta_L_all = []
+Ylm_all= []
 lm = []
 
 for i in xrange(4,grid.numTerms):
     l, m = grid.l[i], grid.m[i]
-    if m < 0: continue
+#    if m < 0: continue
     if l > 9: break
     print l, m
     lm.append((l,m))
@@ -72,10 +73,11 @@ for i in xrange(4,grid.numTerms):
 
     akvs = [sol.GetAKV() for sol in sols]
     eigs = [sol.GetEigs() for sol in sols]
-    print eigs[1]
+
     potentials = [sol.GetPotentials() for sol in sols]
     delta_H = [sol.GetMatrixNorms()[0] for sol in sols]
     delta_L = [sol.GetMatrixNorms()[1] for sol in sols]
+    Ylm = [sol.GetYlm() for sol in sols]
     pot_errors = []
     vec_errors = []
     for i in xrange(nPoints):
@@ -95,6 +97,7 @@ for i in xrange(4,grid.numTerms):
     pot_error_all.append(pot_errors)
     delta_H_all.append(delta_H)
     delta_L_all.append(delta_L)
+    Ylm_all.append(Ylm)
 
 np.save("AKV", np.array(AKV_all))
 np.save("Eigenvalues", np.array(Eigenvalue_all))
@@ -105,3 +108,4 @@ np.save("delta_H", np.array(delta_H_all))
 np.save("delta_L", np.array(delta_L_all))
 np.save("a", coeff_range)
 np.save("lm", np.array(lm))
+np.save("Ylm", np.array(Ylm_all))
