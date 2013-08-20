@@ -27,7 +27,7 @@ class AKVSolution:
     <name>Ylmx.dat - Spherical harmonic coefficients of potential - (l, m, Q_lm)
     <name>vecx.dat - actual eigenvector's components: (theta, phi, vector_theta, vector_phi)
     """
-    def __init__(self, Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", return_eigs=False, name='AKV', use_sparse_alg=False, IO=True):
+    def __init__(self, Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", name='AKV', use_sparse_alg=False, IO=True):
         #Initialize grid
         if grid==None:
             grid = SphericalGrid.SphericalGrid(Lmax, Lmax, Metric, RicciScalar)
@@ -100,23 +100,24 @@ class AKVSolution:
                 self.B[:,i-1] = CWBf_s[1:numpoints+1]
 
         # Solve the generalized eigenvalue problem
-        if use_sparse_alg:
+#        if use_sparse_alg:
     #  Truncate all "small" values to 0 to make matrix sparse
-            self.M[np.abs(M) < 1e-12] = 0.0
-            self.B[np.abs(B) < 1e-12] = 0.0
+#            self.M[np.abs(M) < 1e-12] = 0.0
+#            self.B[np.abs(B) < 1e-12] = 0.0
 
-            invB = scipy.linalg.inv(B)
-            invB = scipy.sparse.csr_matrix(invB)
-            self.M = scipy.sparse.csr_matrix(self.M)
-            eigensol = scipy.sparse.linalg.eigs(invB*self.M, 3, which='SM')
-        else:
-            eigensol = scipy.linalg.eig(self.M, self.B, left=True)
+#            invB = scipy.linalg.inv(B)
+#            invB = scipy.sparse.csr_matrix(invB)
+#            self.M = scipy.sparse.csr_matrix(self.M)
+#            self.B = scipy.sparse.csr_matrix(self.B)
+#            eigensol = scipy.sparse.linalg.eigs(invB*self.M, 3, which='SM')
+#        else:
+        eigensol = scipy.linalg.eig(self.M, self.B, left=True)
 
         #Solve eigenvalue problem
         eigenvals, vLeft, vRight = eigensol
 
-        vRight /= np.sqrt(np.sum(np.abs(vRight)**2, axis=0))
-        vLeft /= np.sqrt(np.sum(np.abs(vLeft)**2, axis=0))
+#        vRight /= np.sqrt(np.sum(np.abs(vRight)**2, axis=0))
+#        vLeft /= np.sqrt(np.sum(np.abs(vLeft)**2, axis=0))
 
         sorted_index = np.abs(eigenvals).argsort()
 
@@ -141,7 +142,11 @@ class AKVSolution:
                 min, max = grid.Minimize(self.potentials[i]), -grid.Minimize(-self.potentials[i])
                 norm = Area/(2*pi*(max-min))
 
-            self.vecs[i] = self.vecs[i] * norm
+#            self.vecs[i] = self.vecs[i] * norm
+            self.vecs[i] = self.vecs[i]*np.sign(np.argmax(np.abs(self.vecs[i])))/np.linalg.norm(self.vecs[i])
+#            self.vecs[i] /= np.linalg.norm(self.vecs[i][:4])
+#            print self.vecs[i][:4]
+
             self.potentials[i] = self.potentials[i] * norm
 
         self.AKVs = [grid.Hodge(grid.D(pot)) for pot in self.potentials]

@@ -24,7 +24,6 @@ for f in dataFiles:
     X, Y = dat[:,opts.xCol], dat[:,opts.yCol]
 #    error = lambda p, y, x: p*x**2.0 - y
 #    lsq = leastsq(error, [-1e-3], args=(Y,X))
-    for i in xrange(1,8):
-        print f, np.polyfit(X,Y,i)
+    print f, np.polyfit(X,Y,8)
 #    residual = np.std(error(lsq, Y, X))/np.max(np.abs(Y))
 #    print f, lsq[0], residual

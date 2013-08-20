@@ -160,6 +160,10 @@ class SphericalGrid:
     def Integrate(self, scalar):
         return 2*pi/self.extents[1]*np.sum(np.inner(self.gaussian_weights, (scalar*self.dA/self.sintheta).T))
 
+### SphereIntegrate
+    def SphereIntegrate(self, scalar):
+        return self.PhysToSpec(scalar)[0]/np.sqrt(4.0*np.pi)
+
 ####### D #################################################
 # Gives the differential of a scalar
 #
@@ -256,10 +260,13 @@ class SphericalGrid:
 #            dth,dph = self.grid.synth_grad(self.StandardToShtns(coeffs))
 #            dph *= self.sintheta
 #        dthph = self.D(dth,0)
-        sph_laplacian = self.SpecToPhys(-self.l*(self.l+1)*coeffs)
+        sph_laplacian = self.SphereLaplacian(scalar)
         return sph_laplacian/self.gthth
 #        d2thth = sph_laplacian - d2phph/(self.sintheta*self.sintheta) - dth*self.costheta/self.sintheta
 #        return d2thth*self.ginvthth + 2.0*self.ginvthph*dthph + d2phph*self.ginvphph + dth*self.gamma_th + dph*self.gamma_ph
+
+    def SphereLaplacian(self, scalar):
+        return self.SpecToPhys(-self.l*(self.l+1)*self.PhysToSpec(scalar))
 
 #### InterpolateToPoint #############################################
 # Computes function value at a point using spectral interpolation
