@@ -29,9 +29,11 @@ class PerturbAKVSol:
     """
     def __init__(self, grid, h, epsilon, KerrNorm=False, name='pertAKV', IO=True):
 
-        sphere_L_s = np.diag(-grid.l*(grid.l+1))
-        sphere_H_s = sphere_L_s**2 + 2.0*sphere_L_s
+        l, m = grid.l, grid.m
 
+        sphere_L_s = np.diag(-l*(l+1))
+        sphere_H_s = sphere_L_s**2 + 2.0*sphere_L_s
+        
         sphere_L = np.array([grid.SpecToPhys(sphere_L_s[i]) for i in xrange(grid.numTerms)])
 
         coeffs = np.eye(grid.numTerms)
@@ -39,28 +41,32 @@ class PerturbAKVSol:
         
         Lh = grid.SphereLaplacian(h)
 
-        L_1 = np.array([-2 * h*sphere_L[i] for i in xrange(grid.numTerms)])
-        D4_1 = np.array([-2 * h*grid.SpecToPhys(sphere_L_s[i]**2) + grid.SphereLaplacian(L_1[i]) for i in xrange(grid.numTerms)])
-        RD2_1 = np.array([-2 * (4*h + Lh)*sphere_L[i] for i in xrange(grid.numTerms)])
-        gradRdf_1 = np.array([-2 * (grid.D(2*h + Lh, 0)*grid.D(sph_harmonics[i],0) + grid.D(2*h + Lh,1)*grid.D(sph_harmonics[i],1)/grid.sintheta**2) for i in xrange(grid.numTerms)])
-        H_1 = np.array([grid.PhysToSpec(D4_1[i] + RD2_1[i] + gradRdf_1[i]) for i in xrange(grid.numTerms)])
+        L_1_r = np.array([-2*h*sphere_L[i] for i in xrange(1,4)])
+        L_1 = ([grid.PhysToSpec(L_1_r[i])[1:4] for i in xrange(3)])
+        vec_0 = scipy.linalg.eig(L_1)[1]
 
+        vec_0_real = np.array([grid.SpecToPhys(np.hstack(((0,),vec_0[:,i]))) for i in xrange(3)])
+
+        D2_1_real = np.array([2*l[i]*(l[i]+1)*h*sph_harmonics[i] for i in xrange(1,grid.numTerms)])
+        D4_1_real = np.array([-2 * ((l[i]*(l[i]+1))**2*h*sph_harmonics[i]) + grid.SphereLaplacian(D2_1_real[i-1]) for i in xrange(1,grid.numTerms)])
+        RD2_1_real = np.array([-2 * (4*h + Lh)*sphere_L[i] for i in xrange(1,grid.numTerms)])
+        gradRdf_1_real = np.array([-2 * (grid.D(2*h + Lh, 0)*grid.D(sph_harmonics[i],0) + grid.D(2*h + Lh,1)*grid.D(sph_harmonics[i],1)/grid.sintheta**2) for i in xrange(1,grid.numTerms)])
+
+        H_1 = np.array([grid.PhysToSpec(D4_1_real[i] + RD2_1_real[i] + gradRdf_1_real[i])[1:] for i in xrange(grid.numTerms-1)]).T
+        H_1[np.abs(H_1)<1e-11] = 0.0
         
+        vec_1 = np.dot(H_1[:,:3], vec_0)
+        vec_1 = (vec_1.T/(2*l[1:]*(l[1:]+1)-(l[1:]*(l[1:]+1))**2))
+        vec_1[:,:3] = 0.0
 
-'''            
-        zeroth_order_vecs = 
-        first_order_vecs = np.loadtxt("firstorder.dat").T
-        if len(first_order_vecs) < grid.numTerms:
-            first_order_vecs = np.hstack((first_order_vecs,np.zeros(3,self.numTerms-len(first_order_vecs))))
+        self.vecs = np.hstack((np.zeros((3,1)),vec_0.T,np.zeros((3,grid.numTerms-4)))) + epsilon*np.hstack((np.zeros((3,1)),vec_1))
 
-        l, m = SphericalGrid.YlmIndex(np.arange(grid.numTerms))
+#        sorted_index = np.abs(eigenvals).argsort()
 
-        sorted_index = np.abs(eigenvals).argsort()
+#        eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
 
-        eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
-        self.minEigenvals = eigenvals[:3]
-
-        self.vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
+#        self.minEigenvals = eigenvals[:3]
+#        self.vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
 
         self.potentials = [grid.SpecToPhys(vec) for vec in self.vecs]
 
@@ -76,16 +82,15 @@ class PerturbAKVSol:
                 norm = Area/(2*pi*(max-min))
 
 #            self.vecs[i] = self.vecs[i] * norm
-#            self.vecs[i] = self.vecs[i]*np.sign(np.argmax(np.abs(self.vecs[i])))/np.linalg.norm(self.vecs[i])
-            self.vecs[i] /= np.linalg.norm(self.vecs[i][:4])
-            print self.vecs[i][:4]
+            self.vecs[i] = self.vecs[i]*np.sign(np.argmax(np.abs(self.vecs[i])))/np.linalg.norm(self.vecs[i])
+#            self.vecs[i] /= np.linalg.norm(self.vecs[i][:4])
 
             self.potentials[i] = self.potentials[i] * norm
 
         self.AKVs = [grid.Hodge(grid.D(pot)) for pot in self.potentials]
 
         if IO==True:
-            np.savetxt(name+"_Eigenvalues.dat", eigenvals)
+#            np.savetxt(name+"_Eigenvalues.dat", eigenvals)
             for i in xrange(3):
                 np.savetxt(name+"_pot"+str(i+1)+".dat", np.column_stack((grid.theta.flatten(),grid.phi.flatten(),self.potentials[i].flatten())))
                 np.savetxt(name+"_Ylm"+str(i+1)+".dat", np.column_stack((l,m,self.vecs[i])),fmt="%d\t%d\t%g")
@@ -101,11 +106,12 @@ class PerturbAKVSol:
     def GetYlm(self):
         return self.vecs
 
-    def GetEigs(self):
-        return self.minEigenvals
+ #   def GetEigs(self):
+#        return self.minEigenvals
 
-    def GetMatrixNorms(self):
-        deltaM = scipy.linalg.norm(self.M - self.sphere_M,ord='fro')
-        deltaL = scipy.linalg.norm(self.B - self.sphere_L_s, ord='fro')
-        return deltaM, deltaL
-'''
+#    def GetMatrixNorms(self):
+#        deltaM = scipy.linalg.norm(self.M - self.sphere_M,ord='fro')
+#        deltaL = scipy.linalg.norm(self.B - self.sphere_L_s, ord='fro')
+#        return deltaM, deltaL
+
+

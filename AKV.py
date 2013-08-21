@@ -139,8 +139,8 @@ def AKV(Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNo
             min, max = grid.Minimize(potentials[i]), -grid.Minimize(-potentials[i])
             norm = Area/(2*pi*(max-min))
 
-#        vecs[i] = vecs[i]*np.sign(np.argmax(np.abs(vecs[i])))/np.linalg.norm(vecs[i])
-        vecs[i] /= np.linalg.norm(vecs[i][:4])
+        vecs[i] = vecs[i]*np.sign(np.argmax(np.abs(vecs[i])))/np.linalg.norm(vecs[i])
+#        vecs[i] /= np.linalg.norm(vecs[i][:4])
         potentials[i] = potentials[i] * norm
 
     AKVs = [grid.Hodge(grid.D(pot)) for pot in potentials]

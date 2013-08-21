@@ -46,8 +46,8 @@ sphere_solution = AKVSolution(grid=grid,IO=False)
 sphere_akv = sphere_solution.GetAKV()
 sphere_pot = sphere_solution.GetPotentials()
 
-amax = 0.1
-nPoints = 51
+amax = 0.3
+nPoints = 151
 coeff_range = np.linspace(0,amax,nPoints)
 
 da = float(amax)/nPoints
@@ -65,7 +65,7 @@ lm = []
 for i in xrange(4,grid.numTerms):
     l, m = grid.l[i], grid.m[i]
 #    if m < 0: continue
-    if l > 9: break
+    if l > 2: break
     print l, m
     lm.append((l,m))
     
