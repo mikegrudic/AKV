@@ -18,7 +18,9 @@ da = a[1:]-a[:-1]
 dEigs = eigs[:,1:]-eigs[:,:-1]
 dError = (pot[:,1:]-pot[:,:-1])
 
-fits = np.array([[np.polyfit(a[20:], np.abs(ylm[i,20:,j]),6) for i in xrange(len(lm))] for j in xrange(3)])
+fits = np.array([[np.polyfit(a[40:], np.abs(ylm[i,40:,j]),10) for i in xrange(len(lm))] for j in xrange(3)])
+
+eig_fit = np.array([[np.polyfit(a[40:], np.abs(eigs[i,40:,j]),10) for i in xrange(len(lm))] for j in xrange(3)])
 
 for i in xrange(len(lm)):
     for j in xrange(3):
@@ -30,5 +32,6 @@ for i in xrange(len(lm)):
 #    np.savetxt("%d%d_eig3.dat"%(l,m),np.column_stack((delta[i],eigs[i,:,2].real)))
         np.savetxt("%d%d_fit%d.dat"%(l,m,j), fits[j,i].T, fmt="%g")
         np.savetxt("%d%d_eig%d.dat"%(l,m,j),np.column_stack((a,eigs[i,:,j].real)))
+#        np.savetxt("%d%d_eig%d.dat"%(l,m,j), eig_fit[j,i].T, fmt="%g")
 #l, m = SphericalGrid.YlmIndex(np.arange(4,
 #print dError_dDelta[:,i]

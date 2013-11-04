@@ -6,67 +6,110 @@ import SphericalGrid
 pi = np.pi
 
 class PerturbAKVSol:
-    """ PerturbAKVSol
-    Calculates the 3 minimum shear approximate killing vectors of a 2-manifold with
-    (theta, phi) coordinates, and the SphericalGrid containing all the pseudospectral grid information
+    def __init__(self, h, epsilon, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", name='PerturbAKV', IO=True):
+        #Initialize grid
+        if grid==None:
+            grid = SphericalGrid.SphericalGrid(Lmax, Lmax)
+        MM = LL = grid.extents[0]
 
-    OPTIONS:
-    Metric - function which returns the metric functions g_{\theta\theta} and
-    g_{\phi\phi} with arguments (theta, phi)
-    RicciScalar - function returning the Ricci scalar of the 2-manifold at a point (theta, phi)
-    grid - already-created SphericalGrid - must supply either this or Metric and Ricci
-    Lmax - maximum spherical harmonic degree on the grid
-    KerrNorm - whether to use the integral normalization as in Lovelace 2008. By default
-    extrema normalization is used
-    mNorm - either "Owen" or "CookWhiting" - default Owen
-    return_eigs - whether to return the 3 minimum eigenvalues
-    name - leading characters in output files - default 'AKV'
+        lmax = grid.Lmax
+    #    l, m = grid.grid.l, grid.grid.m
 
-    OUTPUT FILES:
-    <name>potx.dat - eigenvector potential of x'th smallest shear - (theta, phi, z(theta,phi))
-    <name>Ylmx.dat - Spherical harmonic coefficients of potential - (l, m, Q_lm)
-    <name>vecx.dat - actual eigenvector's components: (theta, phi, vector_theta, vector_phi)
-    """
-    def __init__(self, grid, h, epsilon, KerrNorm=False, name='pertAKV', IO=True):
+        #number of terms in spectral expansion to solve for (SpEC code goes up to Lmax-2)
+        numpoints = grid.numTerms
 
-        l, m = grid.l, grid.m
+        #Real space quantities
+        f = np.zeros(grid.extents)
 
-        sphere_L_s = np.diag(-l*(l+1))
-        sphere_H_s = sphere_L_s**2 + 2.0*sphere_L_s
-        
-        sphere_L = np.array([grid.SpecToPhys(sphere_L_s[i]) for i in xrange(grid.numTerms)])
-
-        coeffs = np.eye(grid.numTerms)
-        sph_harmonics = np.array([grid.SpecToPhys(coeffs[i]) for i in xrange(grid.numTerms)])
-        
         Lh = grid.SphereLaplacian(h)
+        h2 = h**2
+        h3 = h**3
 
-        L_1_r = np.array([-2*h*sphere_L[i] for i in xrange(1,4)])
-        L_1 = ([grid.PhysToSpec(L_1_r[i])[1:4] for i in xrange(3)])
-        vec_0 = scipy.linalg.eig(L_1)[1]
+        #Spectral coefficient arrays
+        f_s = np.zeros(grid.numTerms)
+        Lf_s = np.zeros(grid.numTerms)
+        Hf_s = np.zeros(grid.numTerms)
 
-        vec_0_real = np.array([grid.SpecToPhys(np.hstack(((0,),vec_0[:,i]))) for i in xrange(3)])
+        self.sphere_L_s = -grid.l*(grid.l+1)
+        self.sphere_M = self.sphere_L_s**2 + 2.0*self.sphere_L_s
 
-        D2_1_real = np.array([2*l[i]*(l[i]+1)*h*sph_harmonics[i] for i in xrange(1,grid.numTerms)])
-        D4_1_real = np.array([-2 * ((l[i]*(l[i]+1))**2*h*sph_harmonics[i]) + grid.SphereLaplacian(D2_1_real[i-1]) for i in xrange(1,grid.numTerms)])
-        RD2_1_real = np.array([-2 * (4*h + Lh)*sphere_L[i] for i in xrange(1,grid.numTerms)])
-        gradRdf_1_real = np.array([-2 * (grid.D(2*h + Lh, 0)*grid.D(sph_harmonics[i],0) + grid.D(2*h + Lh,1)*grid.D(sph_harmonics[i],1)/grid.sintheta**2) for i in xrange(1,grid.numTerms)])
+        #Matrices - M for H, B for Laplacian
+        H0 = np.zeros((numpoints, numpoints))
+        H1 = np.zeros((numpoints, numpoints))
+        H2 = np.zeros((numpoints, numpoints))
+        H3 = np.zeros((numpoints, numpoints))
+        L0 = np.zeros((numpoints, numpoints))
+        L1 = np.zeros((numpoints, numpoints))
+        L2 = np.zeros((numpoints, numpoints))
 
-        H_1 = np.array([grid.PhysToSpec(D4_1_real[i] + RD2_1_real[i] + gradRdf_1_real[i])[1:] for i in xrange(grid.numTerms-1)]).T
-        H_1[np.abs(H_1)<1e-11] = 0.0
+        l, m = SphericalGrid.YlmIndex(np.arange(grid.numTerms))
+
+        for i in xrange(0,numpoints):
+            #generate the spherical harmonic of index i
+            coeffs = np.zeros(grid.numTerms)
+            coeffs[i] = 1.0
+            f = grid.SpecToPhys(coeffs)
+
+            #act operators
+            Df = grid.D(f)
+            D20 = grid.SphereLaplacian(f)
+            D21 = -2*h*D20
+            D22 = 2*h2*D20
+            D23 = -4.0/3.0 * h3 * D20
+            D40 = grid.SphereLaplacian(D20)
+            D41 = -2*(h * D40 + grid.SphereLaplacian(h*D20))
+            D42 = 2*h2 * D40 + 2*grid.SphereLaplacian(h2 * D20) + 4*h*grid.SphereLaplacian(h* D20)
+            D43 = -4.0/3.0 * (h3 * D40 + grid.SphereLaplacian(h3 * D20)) - 4*(h2 *grid.SphereLaplacian(h*D20) + h*grid.SphereLaplacian(h2 * D20))
+            RD20 = 2*D20
+            RD21 = -(8*h + 2*Lh)*D20
+            RD22 = (16*h2 + 8*h*Lh)*D20
+            RD23 = (-64.0/3.0*h3 - 16.0*h2)*D20
+            
+            C1 = grid.D(2*h + Lh)
+            C2 = grid.D(2*h2 + 2*h*Lh)
+            C3 = grid.D(-2*h2*Lh - 4.0/3.0*h3)
+
+            DRDF1 = -2*(C1[0]*Df[0] + C1[1]*Df[1]/grid.sintheta**2)
+            DRDF2 = 2*(C2[0]*Df[0] + C2[1]*Df[1]/grid.sintheta**2) - 2*h*DRDF1
+            DRDF3 = 2*(C3[0]*Df[0] + C3[1]*Df[1]/grid.sintheta**2) - 4*h*2*(C2[0]*Df[0] + C2[1]*Df[1]/grid.sintheta**2) - 4*h2*(C1[0]*Df[0] + C1[1]*Df[1]/grid.sintheta**2)
+
+            H0_s = grid.PhysToSpec(D40 + RD20)
+            H1_s = grid.PhysToSpec(D41 + RD21 + DRDF1)
+            H2_s = grid.PhysToSpec(D42 + RD22 + DRDF2)
+            H3_s = grid.PhysToSpec(D43 + RD23 + DRDF3)
+            
+            L0_s = grid.PhysToSpec(D20)
+            L1_s = grid.PhysToSpec(D21)
+            L2_s = grid.PhysToSpec(D22)
+
+            #Populate the matrices
+            H0[:,i] = H0_s
+            H1[:,i] = H1_s
+            H2[:,i] = H2_s
+            H3[:,i] = H3_s
+            L0[:,i] = L0_s
+            L1[:,i] = L1_s
+            L2[:,i] = L2_s
+
+            #apply perturbation formulas
+        for i in xrange(1, 4):
+            v0 = np.zeros(grid.numTerms)
+            v0[i] = 1.0
+            
+            #First order:
+            v1 = np.dot(H1, v0)/self.sphere_M
+            print v1
+            exit()
         
-        vec_1 = np.dot(H_1[:,:3], vec_0)
-        vec_1 = (vec_1.T/(2*l[1:]*(l[1:]+1)-(l[1:]*(l[1:]+1))**2))
-        vec_1[:,:3] = 0.0
+        sorted_index = np.abs(eigenvals).argsort()
 
-        self.vecs = np.hstack((np.zeros((3,1)),vec_0.T,np.zeros((3,grid.numTerms-4)))) + epsilon*np.hstack((np.zeros((3,1)),vec_1))
+        eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
+        self.minEigenvals = eigenvals[:3]
 
-#        sorted_index = np.abs(eigenvals).argsort()
+        self.vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
 
-#        eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
-
-#        self.minEigenvals = eigenvals[:3]
-#        self.vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
+        for i, vec in enumerate(self.vecs):
+            vec[1:numpoints+1] = vRight[:,i].T.real
 
         self.potentials = [grid.SpecToPhys(vec) for vec in self.vecs]
 
@@ -84,13 +127,14 @@ class PerturbAKVSol:
 #            self.vecs[i] = self.vecs[i] * norm
             self.vecs[i] = self.vecs[i]*np.sign(np.argmax(np.abs(self.vecs[i])))/np.linalg.norm(self.vecs[i])
 #            self.vecs[i] /= np.linalg.norm(self.vecs[i][:4])
+#            print self.vecs[i][:4]
 
             self.potentials[i] = self.potentials[i] * norm
 
         self.AKVs = [grid.Hodge(grid.D(pot)) for pot in self.potentials]
 
         if IO==True:
-#            np.savetxt(name+"_Eigenvalues.dat", eigenvals)
+            np.savetxt(name+"_Eigenvalues.dat", eigenvals)
             for i in xrange(3):
                 np.savetxt(name+"_pot"+str(i+1)+".dat", np.column_stack((grid.theta.flatten(),grid.phi.flatten(),self.potentials[i].flatten())))
                 np.savetxt(name+"_Ylm"+str(i+1)+".dat", np.column_stack((l,m,self.vecs[i])),fmt="%d\t%d\t%g")
@@ -106,12 +150,10 @@ class PerturbAKVSol:
     def GetYlm(self):
         return self.vecs
 
- #   def GetEigs(self):
-#        return self.minEigenvals
+    def GetEigs(self):
+        return self.minEigenvals
 
-#    def GetMatrixNorms(self):
-#        deltaM = scipy.linalg.norm(self.M - self.sphere_M,ord='fro')
-#        deltaL = scipy.linalg.norm(self.B - self.sphere_L_s, ord='fro')
-#        return deltaM, deltaL
-
-
+    def GetMatrixNorms(self):
+        deltaM = scipy.linalg.norm(self.M - self.sphere_M,ord='fro')
+        deltaL = scipy.linalg.norm(self.B - self.sphere_L_s, ord='fro')
+        return deltaM, deltaL

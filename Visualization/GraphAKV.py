@@ -21,8 +21,6 @@ for vecFile in vecFiles:
     print vecFile
     figure()
     name, extension = vecFile.split("vec")
-#    print f.split(".dat")[0]
-#    vecFile = name+"_vec1"+extension
 
     vec = np.loadtxt(vecFile)
 
@@ -34,18 +32,11 @@ for vecFile in vecFiles:
 
     quiver(phi,theta,v_phi*np.sin(theta), v_theta, pivot = 'middle')
 
-#    smax, smin = np.max(scalar), np.min(scalar)
-
     x, y = phi, theta
 
-#    im = imshow(scalar,cmap=cm.RdBu, extent=[0,2*np.pi,0,np.pi]) # drawing the function
-    # adding the Contour lines with labels
-#    cset = contour(scalar,arange(smin,smax,(smax-smin)/8),linewidths=2,cmap=cm.Set2)
-#    cset = contour(phi,theta,scalar,linewidths=1)
-#    clabel(cset,inline=True,fmt='%1.1f',fontsize=10)
-#    colorbar(im) # adding the colobar on the right
-    # latex fashion title
     title(vecFile.split(".dat")[0])
+    xlim([0,2*np.pi])
+    ylim([0,np.pi])
     xlabel("Phi")
     ylabel("Theta")
     savefig(vecFile.split(".dat")[0]+".png")

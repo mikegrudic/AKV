@@ -62,10 +62,10 @@ delta_L_all = []
 Ylm_all= []
 lm = []
 
-for i in xrange(4,grid.numTerms):
+for i in xrange(0,grid.numTerms):
     l, m = grid.l[i], grid.m[i]
 #    if m < 0: continue
-    if l > 2: break
+    if l > 1: break
     print l, m
     lm.append((l,m))
     

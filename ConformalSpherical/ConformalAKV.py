@@ -21,7 +21,7 @@ p.add_option("--Lmax", type ="int", default = 15,
 grid = SphericalGrid.SphericalGrid(opts.Lmax, opts.Lmax)
 
 #Conformal factor will be of form exp(2H) - hardcode H here:
-H = 0*(1 + np.cos(grid.theta)*np.sin(grid.phi))
+H = np.cos(grid.theta)
 
 grid.gthth, grid.gphph = np.exp(2*H), np.exp(2*H)*np.sin(grid.theta)**2
 grid.UpdateMetric()

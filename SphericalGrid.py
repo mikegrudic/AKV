@@ -255,15 +255,17 @@ class SphericalGrid:
 
     def Laplacian(self, scalar, dth=None, dph=None): 
         coeffs = self.PhysToSpec(scalar)
-#        d2phph = self.SpecToPhys(-self.m*self.m*coeffs)
-#        if dth==None:
-#            dth,dph = self.grid.synth_grad(self.StandardToShtns(coeffs))
-#            dph *= self.sintheta
-#        dthph = self.D(dth,0)
-        sph_laplacian = self.SphereLaplacian(scalar)
+        d2phph = self.SpecToPhys(-self.m*self.m*coeffs)
+        if dth==None:
+            dth,dph = self.grid.synth_grad(self.StandardToShtns(coeffs))
+            dph *= self.sintheta
+        dthph = self.D(dth,0)
+        sph_laplacian = self.SpecToPhys(-self.l*(self.l+1)*coeffs)
+#        print np.std(self.gamma_th), np.std(self.gamma_ph)
         return sph_laplacian/self.gthth
 #        d2thth = sph_laplacian - d2phph/(self.sintheta*self.sintheta) - dth*self.costheta/self.sintheta
 #        return d2thth*self.ginvthth + 2.0*self.ginvthph*dthph + d2phph*self.ginvphph + dth*self.gamma_th + dph*self.gamma_ph
+#        return sph_laplacian*self.ginvthth
 
     def SphereLaplacian(self, scalar):
         return self.SpecToPhys(-self.l*(self.l+1)*self.PhysToSpec(scalar))
