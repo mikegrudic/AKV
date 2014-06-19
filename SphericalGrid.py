@@ -78,6 +78,7 @@ class SphericalGrid:
         #These terms show up when computing Laplacians
         self.gamma_ph = (-(self.gthth**2*self.gphph_ph) + self.gthth*(self.gthph*(2*self.gthth_ph + self.gphph_th) + self.gphph*(self.gthth_ph - 2*self.gthph_th)) + self.gthph*(-2*self.gthph*self.gthth_ph + self.gphph*self.gthth_th))/2.0/self.detg**2
         self.gamma_th = (-2*self.gthph**2*self.gphph_th + self.gthph*(self.gthth*self.gphph_ph + self.gphph*(self.gthth_ph + 2*self.gthph_th)) + self.gphph*(self.gthth*(-2*self.gthth_ph + self.gphph_th) - self.gphph*self.gthth_th))/2.0/self.detg**2
+        
 
 #### ComputeMetric ##########################################################
 # Given a function returning metric functions computes metric functions and
@@ -129,10 +130,18 @@ class SphericalGrid:
 #   scalar - set of values defined on the spherical grid
 ##############################################################################
 
-    def SpecToPhys(self, coeffs):
+    def SpecToPhys(self, coeffs, coeffs2=None):
         if len(coeffs) < self.numTerms:
             coeffs = np.hstack((coeffs,np.zeros(self.numTerms-len(coeffs))))
-        return self.grid.synth(self.StandardToShtns(coeffs))
+        if coeffs2 is not None:
+            if len(coeffs2) < self.numTerms:
+                coeffs2 = np.hstack((coeffs2,np.zeros(self.numTerms-len(coeffs2))))
+            vtheta, vphi = self.grid.synth(self.StandardToShtns(coeffs), self.StandardToShtns(coeffs2))
+            vphi /= self.sintheta
+            return vtheta, vphi
+        
+        else:
+            return self.grid.synth(self.StandardToShtns(coeffs))
 
 ######### PhysToSpec ##########################################################
 #   IN:
@@ -142,9 +151,13 @@ class SphericalGrid:
 #   coeffs - spherical harmonic expansion coefficients
 ##############################################################################
 
-    def PhysToSpec(self, scalar):
-        shtns_spec = self.grid.analys(scalar)
-        return self.ShtnsToStandard(shtns_spec)
+    def PhysToSpec(self, f1, f2=None):
+        if f2 is not None:
+            s1, s2 = self.grid.analys(f1, f2)
+            return self.ShtnsToStandard(s1),self.ShtnsToStandard(s2)
+        else:
+            s1 = self.grid.analys(f1) 
+            return self.ShtnsToStandard(s1)
 
 ####### PhysToSpecLS #####################################################
 # Computes spectral analysis using least squares fit - usually faster
@@ -261,7 +274,6 @@ class SphericalGrid:
             dph *= self.sintheta
         dthph = self.D(dth,0)
         sph_laplacian = self.SpecToPhys(-self.l*(self.l+1)*coeffs)
-#        print np.std(self.gamma_th), np.std(self.gamma_ph)
         return sph_laplacian/self.gthth
 #        d2thth = sph_laplacian - d2phph/(self.sintheta*self.sintheta) - dth*self.costheta/self.sintheta
 #        return d2thth*self.ginvthth + 2.0*self.ginvthph*dthph + d2phph*self.ginvphph + dth*self.gamma_th + dph*self.gamma_ph

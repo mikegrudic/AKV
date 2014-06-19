@@ -6,13 +6,15 @@ import SphericalGrid
 pi = np.pi
 
 class PerturbAKVSol:
-    def __init__(self, h, epsilon, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", name='PerturbAKV', IO=True):
+    def __init__(self, h, epsilon, grid = None, order = 3, Lmax=15, KerrNorm=False, mNorm = "Owen", name='PerturbAKV', IO=True):
         #Initialize grid
         if grid==None:
             grid = SphericalGrid.SphericalGrid(Lmax, Lmax)
         MM = LL = grid.extents[0]
 
         lmax = grid.Lmax
+
+        grid.dA = np.exp(2*epsilon*h)*grid.sintheta
     #    l, m = grid.grid.l, grid.grid.m
 
         #number of terms in spectral expansion to solve for (SpEC code goes up to Lmax-2)
@@ -63,7 +65,7 @@ class PerturbAKVSol:
             RD20 = 2*D20
             RD21 = -(8*h + 2*Lh)*D20
             RD22 = (16*h2 + 8*h*Lh)*D20
-            RD23 = (-64.0/3.0*h3 - 16.0*h2)*D20
+            RD23 = (-64.0/3.0*h3 - 16.0*h2*Lh)*D20
             
             C1 = grid.D(2*h + Lh)
             C2 = grid.D(2*h2 + 2*h*Lh)
@@ -71,7 +73,7 @@ class PerturbAKVSol:
 
             DRDF1 = -2*(C1[0]*Df[0] + C1[1]*Df[1]/grid.sintheta**2)
             DRDF2 = 2*(C2[0]*Df[0] + C2[1]*Df[1]/grid.sintheta**2) - 2*h*DRDF1
-            DRDF3 = 2*(C3[0]*Df[0] + C3[1]*Df[1]/grid.sintheta**2) - 4*h*2*(C2[0]*Df[0] + C2[1]*Df[1]/grid.sintheta**2) - 4*h2*(C1[0]*Df[0] + C1[1]*Df[1]/grid.sintheta**2)
+            DRDF3 = 2*(C3[0]*Df[0] + C3[1]*Df[1]/grid.sintheta**2) - 4*h*(C2[0]*Df[0] + C2[1]*Df[1]/grid.sintheta**2) - 4*h2*(C1[0]*Df[0] + C1[1]*Df[1]/grid.sintheta**2)
 
             H0_s = grid.PhysToSpec(D40 + RD20)
             H1_s = grid.PhysToSpec(D41 + RD21 + DRDF1)
@@ -91,26 +93,43 @@ class PerturbAKVSol:
             L1[:,i] = L1_s
             L2[:,i] = L2_s
 
-            #apply perturbation formulas
-        for i in xrange(1, 4):
+        #apply perturbation formulas
+        v0eig = scipy.linalg.eig(L1[1:4,1:4])[1].T
+
+        self.vecs = []
+        self.eigenvals = []
+
+        for i in xrange(3):
             v0 = np.zeros(grid.numTerms)
-            v0[i] = 1.0
-            
+            v1 = np.zeros(grid.numTerms)
+            v2 = np.zeros(grid.numTerms)
+            v3 = np.zeros(grid.numTerms)
+            v0[1:4] = v0eig[i]
+
             #First order:
-            v1 = np.dot(H1, v0)/self.sphere_M
-            print v1
-            exit()
+            v1[4:] = (-np.dot(H1[4:,:], v0)/self.sphere_M[4:])
+
+            #Second order
+            eig2 = -0.5*np.dot(v0, (np.dot(H1, v1) + np.dot(H2, v0)))
+            v2[4:] = -(np.dot(H2[4:,:],v0) + np.dot(H1[4:,:],v1))/self.sphere_M[4:]
+            v2 -= 0.5*np.dot(v1, v1)*v0
+            
+            #Third order:
+            eig3 = -0.5*np.dot(v0, (np.dot(H3, v0) + np.dot(H2, v1) + np.dot(H1, v2) - eig2*np.dot(L1, v0)))
+            v3[4:] = -(np.dot(H3[4:,:],v0) + np.dot(H2[4:,:],v1) + np.dot(H1[4:,:],v2) - eig2*np.dot(L1[4:,:],v0))/self.sphere_M[4:]
+            v3 -= np.dot(v2, v1)*v0
+
+            if order == 1:
+                self.vecs.append(v0 + epsilon*v1)
+            elif order == 2:
+                self.vecs.append(v0 + epsilon*v1 + epsilon**2*v2)
+            else:
+                self.vecs.append(v0 + epsilon*v1 + epsilon**2*v2 + epsilon**3*v3)
+            self.eigenvals.append(epsilon**2 * eig2)# + epsilon**3 * eig3)
+            self.vecs[i][np.abs(self.vecs[i])<1e-12] = 0.0
+
         
-        sorted_index = np.abs(eigenvals).argsort()
-
-        eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
-        self.minEigenvals = eigenvals[:3]
-
-        self.vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
-
-        for i, vec in enumerate(self.vecs):
-            vec[1:numpoints+1] = vRight[:,i].T.real
-
+            
         self.potentials = [grid.SpecToPhys(vec) for vec in self.vecs]
 
         Area = grid.Integrate(np.ones(grid.extents))
@@ -124,17 +143,14 @@ class PerturbAKVSol:
                 min, max = grid.Minimize(self.potentials[i]), -grid.Minimize(-self.potentials[i])
                 norm = Area/(2*pi*(max-min))
 
-#            self.vecs[i] = self.vecs[i] * norm
             self.vecs[i] = self.vecs[i]*np.sign(np.argmax(np.abs(self.vecs[i])))/np.linalg.norm(self.vecs[i])
-#            self.vecs[i] /= np.linalg.norm(self.vecs[i][:4])
-#            print self.vecs[i][:4]
 
             self.potentials[i] = self.potentials[i] * norm
 
         self.AKVs = [grid.Hodge(grid.D(pot)) for pot in self.potentials]
 
         if IO==True:
-            np.savetxt(name+"_Eigenvalues.dat", eigenvals)
+            np.savetxt(name+"_Eigenvalues.dat", self.eigenvals)
             for i in xrange(3):
                 np.savetxt(name+"_pot"+str(i+1)+".dat", np.column_stack((grid.theta.flatten(),grid.phi.flatten(),self.potentials[i].flatten())))
                 np.savetxt(name+"_Ylm"+str(i+1)+".dat", np.column_stack((l,m,self.vecs[i])),fmt="%d\t%d\t%g")
@@ -148,12 +164,8 @@ class PerturbAKVSol:
         return self.potentials
 
     def GetYlm(self):
-        return self.vecs
+        index = np.array(self.eigenvals).argsort()
+        return np.array(self.vecs)[index]
 
     def GetEigs(self):
-        return self.minEigenvals
-
-    def GetMatrixNorms(self):
-        deltaM = scipy.linalg.norm(self.M - self.sphere_M,ord='fro')
-        deltaL = scipy.linalg.norm(self.B - self.sphere_L_s, ord='fro')
-        return deltaM, deltaL
+        return self.eigenvals

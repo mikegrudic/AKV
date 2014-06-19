@@ -27,7 +27,7 @@ class AKVSolution:
     <name>Ylmx.dat - Spherical harmonic coefficients of potential - (l, m, Q_lm)
     <name>vecx.dat - actual eigenvector's components: (theta, phi, vector_theta, vector_phi)
     """
-    def __init__(self, Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", name='AKV', use_sparse_alg=False, IO=True):
+    def __init__(self, Metric=None, RicciScalar=None, grid = None, Lmax=15, KerrNorm=False, mNorm = "Owen", name='AKV', use_sparse_alg=False, IO=False, sort=True):
         #Initialize grid
         if grid==None:
             grid = SphericalGrid.SphericalGrid(Lmax, Lmax, Metric, RicciScalar)
@@ -99,35 +99,21 @@ class AKVSolution:
             else:
                 self.B[:,i-1] = CWBf_s[1:numpoints+1]
 
-        # Solve the generalized eigenvalue problem
-#        if use_sparse_alg:
-    #  Truncate all "small" values to 0 to make matrix sparse
-#            self.M[np.abs(M) < 1e-12] = 0.0
-#            self.B[np.abs(B) < 1e-12] = 0.0
-
-#            invB = scipy.linalg.inv(B)
-#            invB = scipy.sparse.csr_matrix(invB)
-#            self.M = scipy.sparse.csr_matrix(self.M)
-#            self.B = scipy.sparse.csr_matrix(self.B)
-#            eigensol = scipy.sparse.linalg.eigs(invB*self.M, 3, which='SM')
-#        else:
         eigensol = scipy.linalg.eig(self.M, self.B, left=True)
 
         #Solve eigenvalue problem
         eigenvals, vLeft, vRight = eigensol
 
-#        vRight /= np.sqrt(np.sum(np.abs(vRight)**2, axis=0))
-#        vLeft /= np.sqrt(np.sum(np.abs(vLeft)**2, axis=0))
-
-        sorted_index = np.abs(eigenvals).argsort()
-
-        eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
-        self.minEigenvals = eigenvals[:3]
+        if sort:
+            sorted_index = np.abs(eigenvals).argsort()
+            eigenvals, vRight, vLeft = eigenvals[sorted_index], vRight[:,sorted_index], vLeft[:,sorted_index]
+        self.Eigenvals = eigenvals
 
         self.vecs = [np.zeros(grid.numTerms) for i in xrange(3)]
 
         for i, vec in enumerate(self.vecs):
             vec[1:numpoints+1] = vRight[:,i].T.real
+            vec = vec*vec[np.argmax(np.abs(vec))]
 
         self.potentials = [grid.SpecToPhys(vec) for vec in self.vecs]
 
@@ -140,13 +126,12 @@ class AKVSolution:
                 norm = np.sqrt(Area**3/(48.0*pi**2*normint))
             else:
                 min, max = grid.Minimize(self.potentials[i]), -grid.Minimize(-self.potentials[i])
-                norm = Area/(2*pi*(max-min))
+                norm = np.abs(Area/(2*pi*(max-min)))
 
 #            self.vecs[i] = self.vecs[i] * norm
             self.vecs[i] = self.vecs[i]*np.sign(np.argmax(np.abs(self.vecs[i])))/np.linalg.norm(self.vecs[i])
 #            self.vecs[i] /= np.linalg.norm(self.vecs[i][:4])
 #            print self.vecs[i][:4]
-
             self.potentials[i] = self.potentials[i] * norm
 
         self.AKVs = [grid.Hodge(grid.D(pot)) for pot in self.potentials]
@@ -169,9 +154,18 @@ class AKVSolution:
         return self.vecs
 
     def GetEigs(self):
-        return self.minEigenvals
+        return self.Eigenvals
 
     def GetMatrixNorms(self):
         deltaM = scipy.linalg.norm(self.M - self.sphere_M,ord='fro')
         deltaL = scipy.linalg.norm(self.B - self.sphere_L_s, ord='fro')
         return deltaM, deltaL
+
+def ConformalAKVSol(grid, l, m, coefficient):
+    coeffs = np.zeros(grid.numTerms)
+    coeffs[SphericalGrid.YlmIndex(l,m)] = coefficient
+    H = grid.SpecToPhys(coeffs)
+    grid.gthth, grid.gphph = np.exp(2*H), np.exp(2*H)*np.sin(grid.theta)**2
+    grid.UpdateMetric()
+    grid.ricci = -2.0/grid.gthth * (-1.0 + grid.D2(H,1)/grid.sintheta**2 + grid.D(H,0)*grid.costheta/grid.sintheta + grid.D2(H,0))
+    return AKVSolution(grid=grid)

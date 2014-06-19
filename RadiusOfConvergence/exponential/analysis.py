@@ -18,9 +18,9 @@ da = a[1:]-a[:-1]
 dEigs = eigs[:,1:]-eigs[:,:-1]
 dError = (pot[:,1:]-pot[:,:-1])
 
-fits = np.array([[np.polyfit(a[40:], np.abs(ylm[i,40:,j]),10) for i in xrange(len(lm))] for j in xrange(3)])
+fits = np.array([[np.polyfit(a[10:], np.abs(ylm[i,10:,j]),10) for i in xrange(len(lm))] for j in xrange(3)])
 
-eig_fit = np.array([[np.polyfit(a[40:], np.abs(eigs[i,40:,j]),10) for i in xrange(len(lm))] for j in xrange(3)])
+eig_fit = np.array([[np.polyfit(a[10:], np.abs(eigs[i,10:,j]),10) for i in xrange(len(lm))] for j in xrange(3)])
 
 for i in xrange(len(lm)):
     for j in xrange(3):
