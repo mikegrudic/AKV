@@ -76,8 +76,26 @@ class SphericalGrid:
         self.gthph_th, self.gthph_ph = self.D(self.gthph)
 
         #These terms show up when computing Laplacians
-        self.gamma_ph = (-(self.gthth**2*self.gphph_ph) + self.gthth*(self.gthph*(2*self.gthth_ph + self.gphph_th) + self.gphph*(self.gthth_ph - 2*self.gthph_th)) + self.gthph*(-2*self.gthph*self.gthth_ph + self.gphph*self.gthth_th))/2.0/self.detg**2
-        self.gamma_th = (-2*self.gthph**2*self.gphph_th + self.gthph*(self.gthth*self.gphph_ph + self.gphph*(self.gthth_ph + 2*self.gthph_th)) + self.gphph*(self.gthth*(-2*self.gthth_ph + self.gphph_th) - self.gphph*self.gthth_th))/2.0/self.detg**2
+#        self.gamma_ph = (-(self.gthth**2*self.gphph_ph) + self.gthth*(self.gthph*(2*self.gthth_ph + self.gphph_th) + self.gphph*(self.gthth_ph - 2*self.gthph_th)) + self.gthph*(-2*self.gthph*self.gthth_ph + self.gphph*self.gthth_th))/2.0/self.detg**2
+#        self.gamma_th = (-2*self.gthph**2*self.gphph_th + self.gthph*(self.gthth*self.gphph_ph + self.gphph*(self.gthth_ph + 2*self.gthph_th)) + self.gphph*(self.gthth*(-2*self.gthth_ph + self.gphph_th) - self.gphph*self.gthth_th))/2.0/self.detg**2
+
+        psi = 0.5*np.log(self.gthth)
+        dpsi = self.D(psi)
+        self.gamma = np.zeros((2,2,2,self.nTheta, self.nPhi))
+        self.gamma[0,0,:] = dpsi
+        self.gamma[0,1,0] = dpsi[1]
+        self.gamma[0,1,1] = -self.sintheta*(self.costheta + self.sintheta*dpsi[0])
+        self.gamma[1,0,0] = -dpsi[1]/self.sintheta**2
+        self.gamma[1,1,0] = self.costheta/self.sintheta + dpsi[0]
+        self.gamma[1,0,1] = self.gamma[1,1,0]
+        self.gamma[1,1,1] = dpsi[1]
+
+
+    def CovariantDeriv(self, form):
+        if form.shape == (2,self.nTheta, self.nPhi):
+            partial = np.array([self.D(form[0]), self.D(form[1])])
+            return partial + self.gamma[0]*form[0] + self.gamma[1]*form[1]
+        
         
 
 #### ComputeMetric ##########################################################
@@ -138,7 +156,7 @@ class SphericalGrid:
                 coeffs2 = np.hstack((coeffs2,np.zeros(self.numTerms-len(coeffs2))))
             vtheta, vphi = self.grid.synth(self.StandardToShtns(coeffs), self.StandardToShtns(coeffs2))
             vphi /= self.sintheta
-            return vtheta, vphi
+            return np.array([vtheta, vphi])
         
         else:
             return self.grid.synth(self.StandardToShtns(coeffs))
@@ -153,8 +171,8 @@ class SphericalGrid:
 
     def PhysToSpec(self, f1, f2=None):
         if f2 is not None:
-            s1, s2 = self.grid.analys(f1, f2)
-            return self.ShtnsToStandard(s1),self.ShtnsToStandard(s2)
+            s1, s2 = self.grid.analys(f1, f2*self.sintheta)
+            return np.array([self.ShtnsToStandard(s1), self.ShtnsToStandard(s2)])
         else:
             s1 = self.grid.analys(f1) 
             return self.ShtnsToStandard(s1)
@@ -175,8 +193,13 @@ class SphericalGrid:
 
 ### SphereIntegrate
     def SphereIntegrate(self, scalar):
-        return self.PhysToSpec(scalar)[0]/np.sqrt(4.0*np.pi)
+        return self.PhysToSpec(scalar)[0]*np.sqrt(4.0*np.pi)
 
+    def AllDerivs(self, f):
+        df = self.D(f)
+        d2 = self.D2(f)
+        return df[0], df[1], self.D(df[0],1), d2[0], d2[1]
+    
 ####### D #################################################
 # Gives the differential of a scalar
 #
@@ -219,7 +242,7 @@ class SphericalGrid:
             else IM1(INDEX1(i)) = COEFFS1(i);
         }
         """
-        weave.inline(code,['index', 'm', 're', 'im', 'n','coeffs'])
+        weave.inline(code,['index', 'm', 're', 'im', 'n','coeffs'], extra_compile_args =['-O3 -mtune=native -march=native -ffast-math -msse3 -fomit-frame-pointer -malign-double -fstrict-aliasing'])
         return re + 1j*im
 
     def ShtnsToStandard(self,shtns_spec):
@@ -231,7 +254,7 @@ class SphericalGrid:
             else COEFFS1(i) = IM1(INDEX1(i));
             }
         """
-        weave.inline(code,['index','m','re','im','n','coeffs'])
+        weave.inline(code,['index','m','re','im','n','coeffs'],extra_compile_args =['-O3 -mtune=native -march=native -ffast-math -msse3 -fomit-frame-pointer -malign-double -fstrict-aliasing'])
         return coeffs
 
 ###### RaiseForm ##################################
@@ -268,11 +291,11 @@ class SphericalGrid:
 
     def Laplacian(self, scalar, dth=None, dph=None): 
         coeffs = self.PhysToSpec(scalar)
-        d2phph = self.SpecToPhys(-self.m*self.m*coeffs)
-        if dth==None:
-            dth,dph = self.grid.synth_grad(self.StandardToShtns(coeffs))
-            dph *= self.sintheta
-        dthph = self.D(dth,0)
+#        d2phph = self.SpecToPhys(-self.m*self.m*coeffs)
+#        if dth==None:
+#            dth,dph = self.grid.synth_grad(self.StandardToShtns(coeffs))
+#            dph *= self.sintheta
+#        dthph = self.D(dth,0)
         sph_laplacian = self.SpecToPhys(-self.l*(self.l+1)*coeffs)
         return sph_laplacian/self.gthth
 #        d2thth = sph_laplacian - d2phph/(self.sintheta*self.sintheta) - dth*self.costheta/self.sintheta
@@ -297,6 +320,16 @@ class SphericalGrid:
 
     EvalAtPoints = np.vectorize(EvalAtPoint, excluded = ['self','coeffs'])
 
+#    def KillingNorm(self, vector):
+#        vtt, vtp = self.D(vector[0])
+#        vtp, vpp = self.D(vector[1])
+#        dpsi = self.D(0.5*np.log(self.gthth))
+
+#        K = np.empty((2,2,self.nTheta, self.nPhi))
+
+#        sigma[0,0] = 
+        
+            
 #### Minimize ########################################################
 # Find a local minimum of a function using spectral interpolation
 ######################################################################
@@ -358,3 +391,16 @@ class SphericalGrid:
         self.lap_eig = np.insert(self.lap_eig,0,0.0)
         self.lap_basis = np.array([self.SpecToPhys(self.lap_vec[:,i].real) for i in xrange(self.numTerms)])
 
+    def KillingLaplacian(self, v):
+        psi = 0.5*np.log(self.gthth)
+        vtheta10, vtheta01, vtheta11, vtheta20, vtheta02 = self.AllDerivs(v[0])
+        vphi10, vphi01, vphi11, vphi20, vphi02 = self.AllDerivs(v[1])
+        psi10, psi01, psi11, psi20, psi02 = self.AllDerivs(psi)
+        SLvtheta = self.SphereLaplacian(v[0])
+        cott = self.costheta/self.sintheta
+        lvtheta = 2*((cott**2 + cott*psi01 - psi20)*v[0] - 2*psi10*vtheta10 - vtheta01/self.sintheta**2 - SLvtheta - 2*psi01*vphi10 + (cott + psi10)*vphi01 - 0.5*vphi11)
+        lvtheta /= self.gthth
+        lvphi = 2*(psi02*v[1]/self.sintheta**2 - (1.5*cott + psi10)*vphi10 - 2*psi01*vphi01/self.sintheta**2 - 0.5*vphi20 - vphi02/self.sintheta**2 + (psi01*vtheta10 -(1.5*cott + 2*psi10)*vtheta01 - 0.5*vtheta11)/self.sintheta**2)
+        
+        return lvtheta, lvphi
+    

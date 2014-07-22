@@ -20,7 +20,7 @@ else:
 for vecFile in vecFiles:
     print vecFile
     figure()
-    name, extension = vecFile.split("vec")
+#    name, extension = vecFile.split("vec")
 
     vec = np.loadtxt(vecFile)
 
