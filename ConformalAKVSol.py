@@ -132,7 +132,7 @@ class ConformalAKVSol:
 
 #        knorms = np.array([KillingNorm(F1,F2,grid) for F1, F2 in zip(f1,f2)])
 #        shearnorms = np.array([ShearNorm(F1,F2,grid) for F1, F2 in zip(f1,f2)])
-        knorms = -0.5*eigenvals
+        knorms = -0.5*eigenvals.real
 
 #        if min_norm == 'Killing':
         sorted_index = np.abs(knorms).argsort()
