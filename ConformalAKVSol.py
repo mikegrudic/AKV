@@ -21,7 +21,7 @@ def ShearNorm(f1, f2, grid):
     return KillingNorm(f1,f2,grid) - 0.5*grid.Integrate(grid.Laplacian(f1)**2)
 
 class ConformalAKVSol:
-    def __init__(self, psi_coeffs, resolution, nsols = 3, min_norm = 'Killing', grid = None):
+    def __init__(self, psi_coeffs, resolution = 15, nsols = 3, min_norm = 'Killing', grid = None):
         if grid == None:
             grid = SphericalGrid.SphericalGrid(resolution, resolution)
 
@@ -124,32 +124,42 @@ class ConformalAKVSol:
         
         f1, f2 = np.array([grid.SpecToPhys(v) for v in v1]), np.array([grid.SpecToPhys(v) for v in v2])
         df1, df2 = np.array([grid.D(F1) for F1 in f1]), np.array([grid.D(F2) for F2 in f2])
-
+        
         norm = np.array([grid.Integrate(-F2*grid.Laplacian(F2) - F1*grid.Laplacian(F1) + 2*(DF1[0]*DF2[1] - DF1[1]*DF2[0])/grid.dA) for F1,F2, DF1, DF2 in zip(f1,f2, df1, df2)])
 
         f1 = np.array([F1/np.sqrt(N) for F1, N in zip(f1, norm)])
         f2 = np.array([F2/np.sqrt(N) for F2, N in zip(f2, norm)])
 
-        knorms = np.array([KillingNorm(F1,F2,grid) for F1, F2 in zip(f1,f2)])
-        shearnorms = np.array([ShearNorm(F1,F2,grid) for F1, F2 in zip(f1,f2)])
+#        knorms = np.array([KillingNorm(F1,F2,grid) for F1, F2 in zip(f1,f2)])
+#        shearnorms = np.array([ShearNorm(F1,F2,grid) for F1, F2 in zip(f1,f2)])
+        knorms = -0.5*eigenvals
 
 #        if min_norm == 'Killing':
         sorted_index = np.abs(knorms).argsort()
 #        else:
 #            sorted_index = np.abs(shearnorms).argsort()
 
-        eigenvals, v1,  v2, knorms, shearnorms, df1, df2 = eigenvals[sorted_index], v1[sorted_index], v2[sorted_index], knorms[sorted_index], shearnorms[sorted_index], df1[sorted_index], df2[sorted_index]
+        eigenvals, v1,  v2, knorms,  df1, df2 = eigenvals[sorted_index], v1[sorted_index], v2[sorted_index], knorms[sorted_index], df1[sorted_index], df2[sorted_index]
 
         self.vector_fields = np.array([np.array([DF2[1], -DF2[0]])/grid.dA + DF1 for DF1, DF2 in zip(df1[:nsols], df2[:nsols])])
         self.knorms = knorms[:nsols]
-        self.shearnorms = shearnorms[:nsols]
+#        self.shearnorms = shearnorms[:nsols]
+
+        self.knorms[np.abs(self.knorms) < 1e-15] = 0.0
+#        self.shearnorms[np.abs(self.shearnorms) < 1e-15] = 0.0
+
+        self.eigenvals = eigenvals[:nsols]
+
         self.f1, self.f2 = f1[:nsols], f2[:nsols]
 
     def GetVectorFields(self):
         return self.vector_fields
+
+    def GetEigenvalues(self):
+        return self.eigenvals
   
-    def GetShearNorms(self):
-        return self.shearnorms
+#    def GetShearNorms(self):
+#        return self.shearnorms
         
     def GetKillingNorms(self):
         return self.knorms
