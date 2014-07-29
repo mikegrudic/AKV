@@ -130,23 +130,16 @@ class ConformalAKVSol:
         f1 = np.array([F1/np.sqrt(N) for F1, N in zip(f1, norm)])
         f2 = np.array([F2/np.sqrt(N) for F2, N in zip(f2, norm)])
 
-#        knorms = np.array([KillingNorm(F1,F2,grid) for F1, F2 in zip(f1,f2)])
-#        shearnorms = np.array([ShearNorm(F1,F2,grid) for F1, F2 in zip(f1,f2)])
         knorms = -0.5*eigenvals.real
 
-#        if min_norm == 'Killing':
         sorted_index = np.abs(knorms).argsort()
-#        else:
-#            sorted_index = np.abs(shearnorms).argsort()
 
         eigenvals, v1,  v2, knorms,  df1, df2 = eigenvals[sorted_index], v1[sorted_index], v2[sorted_index], knorms[sorted_index], df1[sorted_index], df2[sorted_index]
 
         self.vector_fields = np.array([np.array([DF2[1], -DF2[0]])/grid.dA + DF1 for DF1, DF2 in zip(df1[:nsols], df2[:nsols])])
         self.knorms = knorms[:nsols]
-#        self.shearnorms = shearnorms[:nsols]
 
         self.knorms[np.abs(self.knorms) < 1e-15] = 0.0
-#        self.shearnorms[np.abs(self.shearnorms) < 1e-15] = 0.0
 
         self.eigenvals = eigenvals[:nsols]
 
@@ -157,9 +150,6 @@ class ConformalAKVSol:
 
     def GetEigenvalues(self):
         return self.eigenvals
-  
-#    def GetShearNorms(self):
-#        return self.shearnorms
         
     def GetKillingNorms(self):
         return self.knorms
