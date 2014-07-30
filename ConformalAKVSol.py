@@ -7,18 +7,6 @@ def truncate_tiny(matrix):
     norm = np.sqrt(np.sum(matrix**2))
     matrix[np.abs(matrix/norm) < 1e-15] = 0.0
 
-def KillingNorm(f1,f2,grid):
-    lf1, lf2 = grid.Laplacian(f1), grid.Laplacian(f2)
-    llf1, llf2 = grid.Laplacian(lf1), grid.Laplacian(lf2)
-    df1, df2 = grid.D(f1), grid.D(f2)
-    dR = grid.D(grid.ricci)
-    gradR = grid.Raise(dR)
-    
-    integrand = f1*(0.5*grid.ricci*lf1 + 0.5*(gradR[0]*df1[0] + gradR[1]*df1[1]) + llf1 + (dR[0]*df2[1]-dR[1]*df2[0])/grid.dA) + f2*(0.5*grid.ricci*lf2 + 0.5*(gradR[0]*df2[0] + gradR[1]*df2[1]) + 0.5*llf2)
-    return grid.Integrate(integrand)
-
-def ShearNorm(f1, f2, grid):
-    return KillingNorm(f1,f2,grid) - 0.5*grid.Integrate(grid.Laplacian(f1)**2)
 
 class ConformalAKVSol:
     def __init__(self, psi_coeffs, resolution = 15, nsols = 3, min_norm = 'Killing', grid = None):
@@ -42,6 +30,7 @@ class ConformalAKVSol:
 
         if nsols > N:
             nsols = N
+        self.nsols = nsols
 
         if min_norm == 'Killing':
             A = np.empty((N,N))
@@ -142,8 +131,10 @@ class ConformalAKVSol:
         self.knorms[np.abs(self.knorms) < 1e-15] = 0.0
 
         self.eigenvals = eigenvals[:nsols]
-
+        
         self.f1, self.f2 = f1[:nsols], f2[:nsols]
+
+        self.grid = grid
 
     def GetVectorFields(self):
         return self.vector_fields
@@ -156,3 +147,6 @@ class ConformalAKVSol:
 
     def GetFunctions(self):
         return self.f1, self.f2
+
+    def GetGrid(self):
+        return self.grid

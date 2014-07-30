@@ -55,15 +55,6 @@ class SphericalGrid:
             self.gthth, self.gphph, self.gthph = fmetric(self.theta, self.phi)
             self.UpdateMetric()
 
-        #construct normal matrix for least squares spectral analysis
-#        self.A = np.zeros((self.nTheta*self.nPhi, self.numTerms))
-#        for i in xrange(self.numTerms):
-#            l, m = YlmIndex(i)
-#            coeffs = np.zeros(self.numTerms)
-#            coeffs[i] = 1.0
-#            self.A[:,i] = self.SpecToPhys(coeffs).flatten()
-#        self.ATA = linalg.cholesky(self.A.T.dot(self.A))
-
         # Compute ricci scalar, or not...
         if fricci==None:
             self.ricci = None
@@ -74,10 +65,6 @@ class SphericalGrid:
         self.gthth_th, self.gthth_ph = self.D(self.gthth)
         self.gphph_th, self.gphph_ph = self.D(self.gphph)        
         self.gthph_th, self.gthph_ph = self.D(self.gthph)
-
-        #These terms show up when computing Laplacians
-#        self.gamma_ph = (-(self.gthth**2*self.gphph_ph) + self.gthth*(self.gthph*(2*self.gthth_ph + self.gphph_th) + self.gphph*(self.gthth_ph - 2*self.gthph_th)) + self.gthph*(-2*self.gthph*self.gthth_ph + self.gphph*self.gthth_th))/2.0/self.detg**2
-#        self.gamma_th = (-2*self.gthph**2*self.gphph_th + self.gthph*(self.gthth*self.gphph_ph + self.gphph*(self.gthth_ph + 2*self.gthph_th)) + self.gphph*(self.gthth*(-2*self.gthth_ph + self.gphph_th) - self.gphph*self.gthth_th))/2.0/self.detg**2
 
         psi = 0.5*np.log(self.gthth)
         dpsi = self.D(psi)
@@ -291,16 +278,8 @@ class SphericalGrid:
 
     def Laplacian(self, scalar, dth=None, dph=None): 
         coeffs = self.PhysToSpec(scalar)
-#        d2phph = self.SpecToPhys(-self.m*self.m*coeffs)
-#        if dth==None:
-#            dth,dph = self.grid.synth_grad(self.StandardToShtns(coeffs))
-#            dph *= self.sintheta
-#        dthph = self.D(dth,0)
         sph_laplacian = self.SpecToPhys(-self.l*(self.l+1)*coeffs)
         return sph_laplacian/self.gthth
-#        d2thth = sph_laplacian - d2phph/(self.sintheta*self.sintheta) - dth*self.costheta/self.sintheta
-#        return d2thth*self.ginvthth + 2.0*self.ginvthph*dthph + d2phph*self.ginvphph + dth*self.gamma_th + dph*self.gamma_ph
-#        return sph_laplacian*self.ginvthth
 
     def SphereLaplacian(self, scalar):
         return self.SpecToPhys(-self.l*(self.l+1)*self.PhysToSpec(scalar))
@@ -319,15 +298,6 @@ class SphericalGrid:
         return self.grid.SH_to_point(self.StandardToShtns(coeffs), np.cos(theta), phi)
 
     EvalAtPoints = np.vectorize(EvalAtPoint, excluded = ['self','coeffs'])
-
-#    def KillingNorm(self, vector):
-#        vtt, vtp = self.D(vector[0])
-#        vtp, vpp = self.D(vector[1])
-#        dpsi = self.D(0.5*np.log(self.gthth))
-
-#        K = np.empty((2,2,self.nTheta, self.nPhi))
-
-#        sigma[0,0] = 
         
             
 #### Minimize ########################################################
