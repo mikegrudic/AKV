@@ -118,12 +118,14 @@ class ConformalAKVSol:
 
         f1 = np.array([F1/np.sqrt(N) for F1, N in zip(f1, norm)])
         f2 = np.array([F2/np.sqrt(N) for F2, N in zip(f2, norm)])
+        df1 = np.array([DF1/np.sqrt(N) for DF1, N in zip(df1, norm)])
+        df2 = np.array([DF2/np.sqrt(N) for DF2, N in zip(df2, norm)])
 
         knorms = -0.5*eigenvals.real
 
         sorted_index = np.abs(knorms).argsort()
 
-        eigenvals, v1,  v2, knorms,  df1, df2 = eigenvals[sorted_index], v1[sorted_index], v2[sorted_index], knorms[sorted_index], df1[sorted_index], df2[sorted_index]
+        eigenvals, v1,  v2, knorms,  df1, df2 = eigenvals[sorted_index].real, v1[sorted_index], v2[sorted_index], knorms[sorted_index], df1[sorted_index], df2[sorted_index]
 
         self.vector_fields = np.array([np.array([DF2[1], -DF2[0]])/grid.dA + DF1 for DF1, DF2 in zip(df1[:nsols], df2[:nsols])])
         self.knorms = knorms[:nsols]

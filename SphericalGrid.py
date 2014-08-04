@@ -340,26 +340,20 @@ class SphericalGrid:
             coeffs[i] = 1.0
             Lf_s = self.PhysToSpec(self.Laplacian(self.SpecToPhys(coeffs)))
             matrix[i-1] = Lf_s[1:]
-           
-        matrix[np.abs(matrix) < 1e-13] = 0
+
+        matrix[np.abs(matrix)<1e-12] = 0.0
 
         self.lap_eig, self.lap_vec = scipy.linalg.eig(matrix.T)
-
         sort_index = np.abs(self.lap_eig).argsort()
-        self.lap_eig, self.lap_vec = self.lap_eig[sort_index], self.lap_vec[:,sort_index]
+        self.lap_eig, self.lap_vec = self.lap_eig[sort_index].real, self.lap_vec.T[sort_index].real
+        self.lap_vec = np.row_stack((np.zeros(len(self.lap_vec)), self.lap_vec))
+        self.lap_basis = np.array([self.SpecToPhys(self.lap_vec[:,i]) for i in xrange(self.numTerms-1)])
 
-        # Must deal with case of complex vector components - construct a real basis by combining degenerate complex conjugates
-        complex_index = self.lap_vec.imag.nonzero()
+    def TestLaplaceEigs(self):
+        self.CalcLaplaceEig()
 
-        for vector in self.lap_vec.T[complex_index]:
-#            vector, lap
-            print vector
+        return np.array([[np.sqrt(self.Integrate((eig*f - self.Laplacian(f))**2)), self.Integrate(f**2)] for eig, f in zip(self.lap_eig, self.lap_basis)])
 
-        I = np.identity(self.numTerms, dtype=np.complex128)
-        I[1:,1:] = self.lap_vec
-        self.lap_vec = I
-        self.lap_eig = np.insert(self.lap_eig,0,0.0)
-        self.lap_basis = np.array([self.SpecToPhys(self.lap_vec[:,i].real) for i in xrange(self.numTerms)])
 
     def KillingLaplacian(self, v):
         psi = 0.5*np.log(self.gthth)
