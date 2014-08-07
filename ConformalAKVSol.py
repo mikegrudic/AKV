@@ -2,10 +2,11 @@ import SphericalGrid
 import shtns
 import numpy as np
 import scipy
+from scipy import sparse
 
 def truncate_tiny(matrix):
     norm = np.sqrt(np.sum(matrix**2))
-    matrix[np.abs(matrix/norm) < 1e-15] = 0.0
+    matrix[np.abs(matrix)/norm < 1e-11] = 0.0
 
 
 class ConformalAKVSol:
@@ -100,8 +101,11 @@ class ConformalAKVSol:
 
             truncate_tiny(H)
             truncate_tiny(L)
-
-            eigenvals, v = scipy.linalg.eig(H, L)
+            
+            Linv = sparse.linalg.inv(sparse.csc_matrix(L))
+            LinvH = Linv.dot(sparse.csr_matrix(H))
+            eigenvals, v = sparse.linalg.eigs(LinvH, k=nsols, which = 'SM')
+            eigenvals, v = eigenvals.real, v.real
 
             v = v.T
             truncate_tiny(v)

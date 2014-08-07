@@ -77,6 +77,15 @@ class SphericalGrid:
         self.gamma[1,0,1] = self.gamma[1,1,0]
         self.gamma[1,1,1] = dpsi[1]
 
+    def SetConformalFactor(self, psi_coeffs):
+        psi = self.SpecToPhys(psi_coeffs)
+
+        self.gthth, self.gphph = np.exp(2*psi), np.exp(2*psi)*self.sintheta**2
+        self.UpdateMetric()
+        self.ComputeMetricDerivs()
+
+        self.ricci = 2/self.gthth*(1 - self.SphereLaplacian(psi))
+
 
     def CovariantDeriv(self, form):
         if form.shape == (2,self.nTheta, self.nPhi):
@@ -224,6 +233,7 @@ class SphericalGrid:
         index, m, re, im, n = self.index, self.m, np.zeros(self.nlm), np.zeros(self.nlm), self.numTerms
         code = """
         int i;
+        double derp = 0.0;
         for (i = 0; i < n; ++i){
             if (M1(i)>=0) RE1(INDEX1(i)) = COEFFS1(i);
             else IM1(INDEX1(i)) = COEFFS1(i);
@@ -236,6 +246,7 @@ class SphericalGrid:
         index, m, coeffs, n, re, im = self.index, self.m, np.zeros(self.numTerms), self.numTerms, shtns_spec.real, shtns_spec.imag
         code = """
         int i;
+        double derp = 0.0;
         for(i=0; i<n; ++i){
             if (M1(i)>=0) COEFFS1(i) = RE1(INDEX1(i));
             else COEFFS1(i) = IM1(INDEX1(i));
@@ -331,28 +342,41 @@ class SphericalGrid:
         function = lambda pt: self.EvalAtPoint(coeffs, pt[0], pt[1]%(2*pi))
         return optimize.minimize(function,(gridMinTh,gridMinPh), method='SLSQP', bounds = bnds, tol = 1e-12).fun
 
-    def CalcLaplaceEig(self):
+    def CalcLaplaceEig(self, N = None):
+        if N is None:
+            N = self.numTerms - 2
         coeffs = np.zeros(self.numTerms)
         matrix = np.zeros((self.numTerms-1, self.numTerms-1))
+        ll1 = -self.l*(self.l+1)
 
+        Ylm = []
         for i in xrange(1,self.numTerms):
             coeffs = np.zeros(self.numTerms)
             coeffs[i] = 1.0
-            Lf_s = self.PhysToSpec(self.Laplacian(self.SpecToPhys(coeffs)))
-            matrix[i-1] = Lf_s[1:]
+            ylm = self.SpecToPhys(coeffs)
+            Ylm.append(ylm)
 
-        matrix[np.abs(matrix)<1e-12] = 0.0
+        for i in xrange(1,self.numTerms):
+            Lf_s = [self.Integrate(Ylm[i-1]*Ylm[j-1]) for j in xrange(1,self.numTerms)]
+            matrix[i-1] = Lf_s
 
-        self.lap_eig, self.lap_vec = scipy.linalg.eig(matrix.T)
+        matrix[np.abs(matrix) < 1e-12] = 0.0
+        print "Matrix population: %g"%(float(np.count_nonzero(matrix))/matrix.size)
+
+        self.lap_eig, self.lap_vec = scipy.sparse.linalg.eigsh(np.diag(-self.l[1:]*(1.0*self.l[1:]+1)), N, M=(matrix.T + matrix)/2,  which='SM')
+
         sort_index = np.abs(self.lap_eig).argsort()
         self.lap_eig, self.lap_vec = self.lap_eig[sort_index].real, self.lap_vec.T[sort_index].real
-        self.lap_vec = np.row_stack((np.zeros(len(self.lap_vec)), self.lap_vec))
-        self.lap_basis = np.array([self.SpecToPhys(self.lap_vec[:,i]) for i in xrange(self.numTerms-1)])
+        self.lap_vec = np.column_stack((np.zeros(len(self.lap_vec)), self.lap_vec))        
+#        self.lap_vec[np.abs(self.lap_vec) < 1e-12] = 0.0
+        self.lap_basis = np.array([self.SpecToPhys(vec) for vec in self.lap_vec])
+        norms = np.array([np.sqrt(self.Integrate(f**2)) for f in self.lap_basis])
+        self.lap_basis = np.array([f/norm for f, norm in zip(self.lap_basis, norms)])
 
     def TestLaplaceEigs(self):
         self.CalcLaplaceEig()
-
-        return np.array([[np.sqrt(self.Integrate((eig*f - self.Laplacian(f))**2)), self.Integrate(f**2)] for eig, f in zip(self.lap_eig, self.lap_basis)])
+        
+        return np.array([[eig, self.Integrate((eig*f - self.Laplacian(f))**2), self.Integrate(f**2)] for eig, f in zip(self.lap_eig, self.lap_basis)])
 
 
     def KillingLaplacian(self, v):
@@ -367,4 +391,6 @@ class SphericalGrid:
         lvphi = 2*(psi02*v[1]/self.sintheta**2 - (1.5*cott + psi10)*vphi10 - 2*psi01*vphi01/self.sintheta**2 - 0.5*vphi20 - vphi02/self.sintheta**2 + (psi01*vtheta10 -(1.5*cott + 2*psi10)*vtheta01 - 0.5*vtheta11)/self.sintheta**2)
         
         return lvtheta, lvphi
-    
+
+    def VecFieldNorm(self, vec):
+        return self.Integrate(self.gthth*(vec[0]**2 + self.sintheta**2 * vec[1]**2))
